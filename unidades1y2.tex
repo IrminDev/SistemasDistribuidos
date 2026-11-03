@@ -1,0 +1,3234 @@
+% !TeX program = xelatex
+\documentclass[11pt,a4paper,oneside]{book}
+\usepackage{fontspec}
+% Cargar archivos de TeX Live sin depender del registro de fontconfig.
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont=lmroman10-bold.otf,
+  ItalicFont=lmroman10-italic.otf,
+  BoldItalicFont=lmroman10-bolditalic.otf,
+  SmallCapsFont=lmromancaps10-regular.otf]
+\setsansfont{lmsans10-regular.otf}[
+  BoldFont=lmsans10-bold.otf,
+  ItalicFont=lmsans10-oblique.otf,
+  BoldItalicFont=lmsans10-boldoblique.otf]
+\setmonofont{Noto Sans Mono CJK SC}[Scale=0.85,
+  BoldFont={Noto Sans Mono CJK SC},BoldFeatures={FakeBold=2}]
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.5cm,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{fvextra}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\definecolor{accent}{HTML}{245577}
+\definecolor{codebackground}{HTML}{F4F6F8}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent,
+  pdftitle={Sistemas distribuidos: unidades 1 y 2}}
+\DefineVerbatimEnvironment{SourceCode}{Verbatim}{
+  breaklines=true,breakanywhere=true,fontsize=\small,
+  frame=single,rulecolor=\color{accent},framesep=3mm,
+  fillcolor=codebackground,tabsize=4}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\setlist{topsep=0.3em,itemsep=0.2em,parsep=0.2em}
+\setcounter{tocdepth}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Sistemas distribuidos}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\begin{document}
+\frontmatter
+\title{\textbf{Sistemas distribuidos}\\[0.6em]\large Material de las unidades 1 y 2}
+\author{}
+\date{}
+\maketitle
+\tableofcontents
+\mainmatter
+\part{Unidad 1}
+
+\chapter{Arquitectura Cliente - Servidor}
+
+La clase de hoy vamos a ver cómo programar un cliente y un servidor en Java.
+
+Un cliente es un programa que se conecta a un programa servidor. Notar que el cliente inicia la conexión con el servidor.
+
+Una vez que el cliente está conectado al servidor, el cliente puede enviar datos al servidor y el servidor puede mandar datos al cliente. A este tipo de comunicación se le conoce como bi-direccional, debido a que los datos pueden fluir en ambas direcciones.
+
+En particular, los clientes y servidores que utilizaremos en el curso usan sockets TCP.
+
+Para compilar y ejecutar los programas del curso vamos a utilizar JDK8 desde la línea de comandos.
+
+Los que quieran utilizar ambientes de desarrollo como Netbeans o Eclipse pueden hacerlo, sin embargo, en la clase vamos a ejecutar los programas en la línea de comandos.
+
+\chapter{Cliente.java}
+
+El programa Cliente.java es un ejemplo de un cliente de sockets TCP que se conecta a un servidor y posteriormente envía y recibe datos.
+
+Primeramente, vamos a crear un socket que se conectará al servidor. En este caso el servidor se llama ``localhost`` (computadora local) y el puerto abierto en el servidor es el 50000.
+
+En general el nombre del servidor puede ser un nombre de dominio (como midominio.com o una dirección IP). El número de puerto es un número entero entre 0 y 65535.
+
+Socket conexion = new Socket(``localhost``,50000);
+
+En este caso declaramos una variable de tipo Socket llamada ``conexión`` la cual va a contener una instancia de la clase Socket.
+
+Es importante aclarar que antes de crear el socket, el programa servidor debe estar en ejecución y esperando una conexión, de otra manera la instrucción anterior produce una excepción, la cual desde luego debería controlarse dentro de un bloque try.
+
+Para enviar datos al servidor a través del socket, vamos a crear un stream de salida de la siguiente manera:
+
+\begin{SourceCode}
+DataOutputStream salida = new DataOutputStream(conexion.getOutputStream());
+\end{SourceCode}
+
+De la misma forma, para leer los datos que envía el servidor a través del socket, creamos un stream de entrada:
+
+\begin{SourceCode}
+DataInputStream entrada = new DataInputStream(conexion.getInputStream());
+\end{SourceCode}
+
+Ahora podemos enviar y recibir datos del servidor. Veamos algunos ejemplos.
+
+Vamos a enviar un entero de 32 bits, en este caso el número 123, utilizando el método \texttt{writeInt}:
+
+\begin{SourceCode}
+salida.writeInt(123);
+\end{SourceCode}
+
+Ahora vamos a enviar un número punto flotante de 64 bits utilizando el método \texttt{writeDouble}:
+
+\begin{SourceCode}
+salida.writeDouble(1234567890.1234567890);
+\end{SourceCode}
+
+Vamos a enviar la cadena de caracteres ``hola``:
+
+\begin{SourceCode}
+salida.write(``hola``.getBytes());
+\end{SourceCode}
+
+Debido a que el método write envía un arreglo de bytes, para enviar la cadena de caracteres ``hola`` es necesario convertirla a arreglo de bytes mediante el método getBytes.
+
+Por omisión el método getBytes utiliza la codificación default (UTF-8), para usar otra codificación se puede pasar como parámetro el nombre de la codificación como string, por ejemplo ``UTF-8``. Ver más adelante el tema: Codificación de texto.
+
+Ahora supongamos que el servidor envía al cliente una cadena de caracteres.
+
+Para que el cliente reciba la cadena de caracteres es necesario que conozca el número de bytes que envía el servidor, en este caso el servidor envía una cadena de caracteres de 4 bytes.
+
+Para recibir los bytes se utiliza el método read de la clase \texttt{DataInputStream}. El método read tiene tres parámetros, el primer parámetro es un arreglo de bytes con una longitud suficiente para contener los bytes a recibir.
+
+El segundo parámetro indica la posición, dentro del arreglo de bytes, donde se pondrán los bytes a recibir, y el tercer parámetro indica el número de bytes a recibir.
+
+El siguiente código crea un arreglo de 4 bytes, invoca el método read de la clase DataInputStream, crea una instancia de la clase String utilizando los bytes recibidos.
+
+Debido a que la variable buffer contiene los bytes correspondientes a la cadena de caracteres que envió el servidor, para obtener la cadena de caracteres utilizamos el constructor de la clase String para crear una cadena de caracteres a partir del arreglo de bytes indicando la codificación, en este caso UTF-8.
+
+\begin{SourceCode}
+byte[] buffer = new byte[4];
+entrada.read(buffer,0,4);
+System.out.println(new String(buffer,``UTF-8``));
+\end{SourceCode}
+
+Sin embargo, el método read podría obtener solo una parte del mensaje enviado. Esta situación la explicaremos más adelante.
+
+\section{La clase ByteBuffer}
+
+Ahora veremos cómo enviar de manera eficiente un conjunto de números punto flotante de 64 bits. 
+
+Supongamos que vamos a enviar cinco números punto flotante de 64 bits.
+
+Primero ``empacaremos`` los números utilizando un objeto ByteBuffer.
+
+Cinco números punto flotante de 64 bits ocupan 5x8 bytes (64 bits=8 bytes). Entonces vamos a crear un objeto de tipo ByteBuffer con una capacidad de 40 bytes:
+
+\begin{SourceCode}
+ByteBuffer b = ByteBuffer.allocate(5*8);
+\end{SourceCode}
+
+Utilizamos el método putDouble para agregar cinco números al objeto ByteBuffer:
+
+\begin{SourceCode}
+b.putDouble(1.1);
+b.putDouble(1.2);
+b.putDouble(1.3);
+b.putDouble(1.4);
+b.putDouble(1.5);
+\end{SourceCode}
+
+Para enviar el ``paquete`` de números, convertimos el objeto \texttt{ByteBuffer} a un arreglo de bytes utilizando el método array de la clase \texttt{ByteBuffer}:
+
+\begin{SourceCode}
+byte[] a = b.array();
+\end{SourceCode}
+
+Entonces enviamos el arreglo de bytes utilizando el método write:
+
+\begin{SourceCode}
+salida.write(a);
+\end{SourceCode}
+
+Para terminar el programa cerramos la conexión con el servidor (al cerrar el socket se cierran también los streams asociados), en este caso vamos a poner un retardo de un segundo, antes de cerrar la conexión, para permitir que el servidor tenga tiempo de recibir los datos:
+
+\begin{SourceCode}
+Thread.sleep(1000);
+conexion.close();
+\end{SourceCode}
+
+\chapter{Codificación de texto}
+
+Cuando estudiamos el tema de archivos en la clase de Sistemas Operativos, vemos que hay dos tipos de archivos: archivos binarios y archivos con formato texto.
+
+\section{Archivos binarios}
+
+Los bytes en un archivo binario pueden tomar cualquier valor entre 0 y 255.
+
+Ejemplos de archivos binarios son: imágenes (fotografías), videos, archivos de Office (Word, Excel, etc.), archivos de Libre Office, programas ejecutables, etc.
+
+\section{Archivos con formato texto}
+
+Los archivos con formato texto son aquellos producidos por editores de texto como el Bloc de notas, Visual Studio Code, vi, nano, entre otros.
+
+Debido a que las computadoras solo procesan y almacenan números (no texto), para procesar y guardar un archivo con formato texto es necesario traducir cada carácter a un número. Para ello, se utiliza una tabla de codificación.
+
+\section{Código ASCII}
+
+El código ASCII fue una de las primeras codificaciones utilizadas. En ASCII, cada carácter se traduce a un número entre 0 y 127, lo que permite representar 128 caracteres.
+
+Esta codificación fue diseñada para computadoras de 7 bits y permite representar caracteres del inglés, pero no incluye acentos, ñ, o caracteres de otros idiomas.
+
+\section{Código ANSI}
+
+Debido a las limitantes del código ASCII, surgió la necesidad de representar más caracteres, especialmente para idiomas con caracteres latinos (como el español).
+
+El código ANSI extendió el código ASCII utilizando 8 bits, lo que permitió representar hasta 256 caracteres.
+
+Sin embargo, esta codificación no incluía caracteres de idiomas como el chino, japonés, árabe, ruso, griego, entre otros.
+
+\section{Unicode}
+
+Para resolver las limitaciones de ASCII y ANSI, se desarrolló Unicode, un estándar que asigna un número único a cada carácter de todos los idiomas del mundo.
+
+Unicode utiliza 16 bits, lo que permite representar hasta 65,536 caracteres. Esto incluye caracteres de prácticamente todos los idiomas, símbolos matemáticos, emojis, y más.
+
+Sin embargo, una desventaja de Unicode es que duplica el tamaño de los archivos de texto en comparación con ANSI, ya que utiliza dos bytes para cada carácter en lugar de uno.
+
+\section{UTF-8}
+
+Para optimizar el uso de espacio, se creó UTF-8, una codificación de longitud variable que utiliza 1, 2, 3 o 4 bytes para codificar cada carácter.
+
+UTF-8 es compatible con ASCII y ANSI, ya que los caracteres ASCII (0-127) se representan con un solo byte, igual que en ANSI.
+
+Los caracteres adicionales utilizan 2, 3 o 4 bytes según sea necesario. Esto permite que UTF-8 sea eficiente en términos de espacio y compatible con muchos idiomas.
+
+Actualmente, UTF-8 es la codificación más utilizada en las aplicaciones web, lenguajes de programación y sistemas operativos.
+
+\section{Archivos texto en Windows y en Unix (Linux)}
+
+Los archivos con formato texto en Windows, terminan cada línea con los caracteres carriage return (código ASCII 13) y line feed (código ASCII 10). Para representar estos caracteres en un programa se utilizan las secuencias de escape ``\textbackslash{}r\textbackslash{}n``.
+
+Los archivos con formato texto en Unix o Linux, terminan cada línea con el carácter line feed (código ASCII 10). Para representar este carácter en un programa se utiliza la secuencia de escape ``\textbackslash{}n``.
+
+Para convertir un archivo texto creado en Unix o Linux para ser utilizado en Windows, podemos utilizar el siguiente comando en Unix (Linux):
+
+\begin{SourceCode}
+unix2dos nombre-del-archivo
+\end{SourceCode}
+
+Para convertir un archivo texto creado en Windows para ser utilizado en Unix o Linux, podemos utilizar el siguiente comando en Unix (Linux):
+
+\begin{SourceCode}
+dos2unix nombre-del-archivo
+\end{SourceCode}
+
+\section{Programas en Java}
+
+Los programas en Java pueden ser escritos en diferentes codificaciones, lo que permite que los nombres de variables, funciones y cadenas de caracteres puedan escribirse en cualquier idioma.
+
+Por ejemplo, el siguiente programa calcula el factorial, los nombres de las variables y funciones están en chino. El código fuente se deberá guardar con codificación UTF-8 y se deberá compilar con la opción \texttt{-encoding UTF-8: javac -encoding UTF-8 Factorial.java}
+
+\begin{SourceCode}
+public class Factorial
+{
+    // 方法: 计算阶乘 (factorial)
+    public static long 阶乘(int 数字)
+    {
+        if (数字 <= 1)
+            return 1;
+        else
+            return 数字 * 阶乘(数字 - 1);
+    }
+    public static void main(String[] 参数)
+    {
+        int 数字 = 5;
+        long 结果 = 阶乘(数字);
+        System.out.println(``数字 `` + 数字 + `` 的阶乘是: `` + 结果);
+    }
+}
+\end{SourceCode}
+
+\section{Editores de texto}
+
+Cuando se crea un archivo de texto con un editor como el Bloc de notas, Visual Studio Code, o cualquier otro, se debe seleccionar la codificación que se utilizará para guardar el archivo.
+
+\section{Archivos CSV}
+
+Cuando se exporta una tabla de Excel a un archivo CSV (valores separados por comas), se debe seleccionar la codificación que se utilizará para guardar el archivo.
+
+De igual manera, al abrir un archivo CSV, es necesario especificar la codificación que se utilizó para guardar el archivo, de modo que el texto se muestre adecuadamente.
+
+Es importante destacar que ``formato texto`` no es lo mismo que ``extensión .txt``.
+
+Archivos con extensiones como .java, .html, .py, entre otros, también son archivos con formato texto, aunque no tengan la extensión .txt
+
+\chapter{Criptografía y sockets seguros}
+
+En esta clase veremos cómo implementar un cliente y un servidor mediante sockets seguros.
+
+Primeramente, vamos a explicar los conceptos básicos de PKI (Public Key Infrastructure).
+
+\section{Encriptado y desencriptado simétrico}
+
+La criptografía simétrica es un conjunto de algoritmos que permiten encriptar y desencriptar utilizando la misma clave, conocida como clave secreta o clave privada.
+
+Ejemplos de algoritmos simétricos:
+
+\begin{itemize}
+
+\item AES-128
+
+\item AES-256
+
+\item RC4
+
+\item RC5
+
+\item DES
+
+\item 3DES
+
+\end{itemize}
+
+Los algoritmos simétricos son muy rápidos, sin embargo, resulta complicado intercambiar las claves.
+
+Por ejemplo, supongamos que un amigo se va a estudiar a otro país y en un momento dado te pide le envíes un documento electrónico utilizando email. Desde luego habría que encriptar el documento para evitar que alguna otra persona pudiera hacer mal uso de él.
+
+El problema es que ambos deberían tener la clave para encriptar y desencriptar. A este problema se le conoce como problema de distribución de clave (key distribution problem).
+
+La única solución es que ambos hayan compartido la clave para encriptar y desencriptar antes del viaje, ya que tampoco es seguro enviar la clave por email.
+
+\section{Encriptado y desencriptado asimétrico}
+
+Una mejor solución al problema de distribución de claves es el uso de la criptografía asimétrica.
+
+En la criptografía asimétrica el destinatario del mensaje tiene dos claves, una llamada clave privada y otra llamada clave pública.
+
+La clave privada es una clave que mantiene en secreto el destinatario de los datos, mientras que la clave pública es una clave que puede conocer cualquiera.
+
+En la criptografía asimétrica (también llamada criptografía de llave pública o PKI: Public Key Infrastructure), el originario utiliza la clave pública del destinatario para encriptar los datos. Entonces el destinatario utiliza su clave privada para desencriptar los datos encriptados y obtener los datos en claro.
+
+\section{Firma digital}
+
+El par de claves pública y privada pueden utilizarse para autenticar un documento electrónico. A esta autenticación se le llama firma digital.
+
+El efecto de una firma digital es el mismo que tiene una firma autógrafa, esto es, el no repudio de un documento: la posibilidad de probar que el documento fue, en efecto, firmado por una persona (la persona no puede repudiar el documento).
+
+Supongamos que vamos a enviar un documento (datos) a un destinatario. Para garantizar que el documento procede de un origen determinado, el originario genera un hash de los datos y encripta el hash con su clave privada (la cual solo es conocida por el originario). Al hash encriptado le llamamos la firma digital del documento.
+
+Entonces el originario envía al destinatario el documento y la firma digital respectiva.
+
+Para verificar la firma, el destinatario desencripta la firma digital utilizando la clave pública del originario, entonces obtiene el hash del documento. Así mismo, el destinatario genera el hash del documento recibido.
+
+Si los dos hashes son iguales, entonces podemos estar seguros que el documento recibido procede del propietario de la clave pública y que el documento no ha sido modificado, debido a que cualquier modificación en el documento cambiaría el hash.
+
+\section{Certificado digital}
+
+Ahora bien, ¿Cómo podemos garantizar que una clave privada pertenece a una persona u organismo o dominio de Internet? (es decir, que en efecto la persona firmó un documento). 
+
+Considerando que la clave privada es uno a uno con la clave pública, ¿Cómo sabemos que la clave pública pertenece a la persona u organismo o dominio de Internet?
+
+Si el originario nos envió su clave pública por email, y sabemos con certeza que la dirección de correo electrónico pertenece a esta persona, entonces concluimos que la clave pública pertenece a esta persona, de tal manera que podemos verificar la firma digital de cualquier documento que nos envíe.
+
+Sin embargo, no siempre podemos conocer a ciencia cierta que una dirección de correo electrónico pertenece a una persona determinada.
+
+Para resolver el problema de la identidad de una clave pública (y con ello la identidad de la clave privada), se utiliza un documento electrónico llamado certificado digital.
+
+Un certificado digital es un documento electrónico que contiene, entre otros datos:
+
+\begin{itemize}
+
+\item La identidad —nombre— de una persona, organización o dominio de Internet.
+
+\item Las fechas de validez del certificado.
+
+\item La clave pública de la persona, organización o dominio de Internet.
+
+\item La firma digital de los datos que contiene el certificado.
+
+\end{itemize}
+
+La clave pública que contiene el certificado está asociada a una clave privada que solo conoce la persona u organización o dominio de Internet propietario del certificado digital.
+
+Para mayor seguridad, la clave privada generalmente se encripta con una clave simétrica.
+
+El certificado digital es firmado —avalado— por una autoridad certificadora (CA).
+
+Cuando se adquiere un certificado firmado por una CA, además del certificado se obtiene un archivo conocido como \emph{bundle}. Los certificados incluidos en el \emph{bundle} se llaman certificados intermedios. El archivo contiene los certificados de CA que forman una ruta de certificación desde el certificado emitido hasta un certificado raíz preinstalado en la computadora.
+
+El sistema operativo de nuestra computadora cuenta con un repositorio de certificados de confianza; en este repositorio se instalan los certificados raíz (autofirmados) de las autoridades certificadoras en las que confiamos.
+
+Por defecto, el sistema operativo incluye en el repositorio de certificados de confianza los certificados de las autoridades certificadoras reconocidas internacionalmente. Estos certificados se conocen como certificados raíz (\emph{root}).
+
+Nuestra computadora reconoce como válido un certificado (por ejemplo, el certificado de un dominio al que se conecta el navegador), si hay una ruta de certificación entre el certificado y un certificado en el repositorio de certificados de confianza.
+
+El estándar más utilizado para certificados digitales es el X.509 (el SAT utiliza el mismo estándar para la firma digital).
+
+Existen dos tipos de certificados:
+
+\begin{itemize}
+
+\item Certificados autofirmados.
+
+\item Certificados firmados por una CA.
+
+\end{itemize}
+
+\section{Certificado autofirmado}
+
+Un certificado autofirmado es aquel que se firma con la misma clave privada correspondiente a la clave pública que contiene el certificado.
+
+Un certificado autofirmado se puede crear mediante el comando \texttt{keytool} del JDK.
+
+Al crear un certificado autofirmado, se crea un par de claves pública y privada, la clave pública se incluye en el certificado y este se firma utilizando la clave privada.
+
+Los datos de identidad en el certificado autofirmado los captura el usuario al crear el certificado, por tanto, un certificado autofirmado no tiene validez como medio de identificación (identidad de la clave pública), no obstante, puede utilizarse para implementar comunicación segura.
+
+\section{Certificado firmado por una autoridad certificadora (CA)}
+
+Un certificado firmado por una autoridad certificadora (CA) es un certificado el cual ha sido firmado por un organismo que actúa como autoridad, dicha autoridad garantiza que el certificado pertenece a una determinada persona u organización.
+
+Un certificado de CA es similar a una credencial, la cual contiene el nombre, la fotografía y demás información de una persona; para garantizar que los datos de la credencial corresponden a la persona, la credencial deberá ser firmada por una autoridad.
+
+Los certificados de autoridad certificadora se pueden adquirir con un proveedor de certificados digitales, por ejemplo, \href{https://cheapsslsecurity.com}{cheapsslsecurity.com}.
+
+Existen dos tipos de certificados firmados por una CA:
+
+\begin{itemize}
+
+\item Certificados que verifican el dominio.
+
+\item Certificados que verifican el dominio y, adicionalmente, la empresa.
+
+\end{itemize}
+
+Para poder tener un certificado con verificación de dominio, es necesario ser propietario de un dominio.
+
+Por otra parte, para poder tener un certificado con verificación de empresa, es necesario tener una empresa y un dominio.
+
+\chapter{Máquinas virtuales en Azure}
+
+\section{Crear una máquina virtual con Ubuntu}
+
+Ingresar al \href{https://azure.microsoft.com/es-mx/features/azure-portal/}{portal de Azure}.
+
+\begin{enumerate}
+
+\item Dar clic al botón ``Iniciar sesión``.
+
+\item En el portal de Azure seleccionar ``Máquinas virtuales``.
+
+\item Seleccionar la opción ``+Crear``.
+
+\item Seleccionar la opción ``Máquina virtual en Azure``
+
+\item Seleccionar el grupo de recursos o crear uno nuevo. Un grupo de recursos es similar a una carpeta donde se pueden colocar los diferentes recursos de nube que se crean en Azure.
+
+\item Ingresar el nombre de la máquina virtual.
+
+\item Seleccionar la región donde se creará la máquina virtual. Notar que el costo de la máquina virtual depende de la región. Es recomendable crear la máquina virtual en una región cercana de manera que la comunicación con la máquina virtual sea más rápida.
+
+\end{enumerate}
+
+7.1 En el campo ``Opciones de disponibilidad`` seleccionar ``No se requiere redundancia de la infraestructura``.
+
+7.2 En el campo ``Tipo de seguridad`` seleccionar ``Estándar``.
+
+\begin{enumerate}
+
+\item Seleccionar la imagen, en este caso vamos a seleccionar Ubuntu Server 24.
+
+\end{enumerate}
+
+8.1 En el campo ``Arquitectura de VM'' seleccionar: \texttt{x64}.
+
+\begin{enumerate}
+
+\item En el campo ``Tamaño`` dar clic en ``Ver todos los tamaños``, en este caso vamos a seleccionar una máquina virtual con 1 GB de memoria RAM (Tamaño de VM B1s). Dar clic en el botón ``Seleccionar``.
+
+\item En el campo ``Tipo de autenticación`` seleccionar ``Contraseña``.
+
+\item Ingresamos el nombre del usuario, por ejemplo: ubuntu
+
+\item Ingresamos la contraseña y confirmamos la contraseña. La contraseña debe tener al menos 12 caracteres, debe al menos una letra minúscula, una letra mayúscula, un dígito y un carácter especial.
+
+\item En las ``Reglas de puerto de entrada`` se deberá dejar abierto el puerto 22 para utilizar SSH (la terminal de secure shell).
+
+\item Dar clic en el botón ``Siguiente: Discos>``
+
+\item Seleccionar el tipo de disco de sistema operativo, en este caso vamos a seleccionar HDD estándar.
+
+\item Dar clic en el botón ``Siguiente: Redes>``
+
+\end{enumerate}
+
+Por default se creará una red virtual y la máquina virtual se conectará a esta red virtual. También se creará una IP pública.
+
+\begin{enumerate}
+
+\item Dar clic en el botón ``Siguiente: Administración>``
+
+\item Dar clic en el botón ``Siguiente: Supervisión>``
+
+\item En el campo ``Diagnóstico de arranque`` seleccionar ``Deshabilitar``.
+
+\item Dar clic en el botón ``Revisar y crear``.
+
+\item Dar clic en el botón ``Crear``.
+
+\item Dar clic a la campana de notificaciones (barra superior de la pantalla) para verificar que la maquina virtual se haya creado.
+
+\item Dar clic en el botón ``Ir al recurso``. En la página se puede ver la dirección IP pública de la máquina virtual. Esta dirección puede cambiar cada vez que se apague y se encienda la máquina virtual.
+
+\item Para conectarnos a la máquina virtual vamos a utilizar el programa ssh disponible en Windows, Linux y MacOS.
+
+\item En una ventana de comandos de Windows o una terminal de Linux o macOS, ejecutar \texttt{ssh} así:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh usuario@ip-máquina-virtual
+\end{SourceCode}
+
+Donde usuario es el usuario que ingresamos en el paso 11, ip-máquina-virtual es la ip pública de la máquina virtual.
+
+\begin{enumerate}
+
+\item Para enviar o recibir archivos de la máquina virtual, utilizar \texttt{sftp}, disponible en Windows, Linux y macOS:
+
+\end{enumerate}
+
+\begin{SourceCode}
+sftp usuario@ip-máquina-virtual
+\end{SourceCode}
+
+Para enviar archivos se utiliza el comando put y para recibir archivos se utiliza el comando get.
+
+Para mayor información sobre \texttt{sftp}, consultar \href{https://www.digitalocean.com/community/tutorials/how-to-use-sftp-to-securely-transfer-files-with-a-remote-server-es}{How To Use SFTP to Securely Transfer Files}.
+
+\section{Abrir un puerto de entrada}
+
+Para que los programas que ejecutan en la máquina virtual pueda recibir conexiones a través de un determinado puerto, es necesario crear una regla de entrada para el puerto.
+
+Por ejemplo, vamos a abrir el puerto 50000 en la máquina virtual que acabamos de crear:
+
+\begin{enumerate}
+
+\item Entrar al portal de Azure.
+
+\item Seleccionar ``Máquinas virtuales``.
+
+\item Seleccionar la máquina virtual.
+
+\item Dar clic en ``Configuración de red``.
+
+\item Dar clic en el botón ``+Crear ACL del puerto``.
+
+\item Seleccionar ``Regla de puerto de entrada``.
+
+\item En ``Intervalos de puertos de destino``, ingresar \texttt{50000}.
+
+\item Seleccionar el protocolo \texttt{TCP}.
+
+\item En ``Nombre``, ingresar un nombre para la regla, por ejemplo: \texttt{Puerto\_50000}.
+
+\item Dar clic en el botón ``Aceptar``.
+
+\end{enumerate}
+
+\section{Detener una máquina virtual}
+
+Cuando una máquina virtual no se utiliza es conveniente detenerla con el fin de reducir el costo. Para detener una máquina virtual:
+
+\begin{enumerate}
+
+\item Dar clic en la opción ``Detener`` en el portal de Azure.
+
+\item Cuando se pregunta ¿Desea detener ...? dar clic en el botón ``Sí``.
+
+\end{enumerate}
+
+Esperar a que el estado de la máquina virtual sea ``Desasignada``.
+
+\section{Encender una máquina virtual}
+
+Para encender una máquina virtual
+
+\begin{enumerate}
+
+\item Seleccionar la opción ``Iniciar`` en la página de la máquina virtual dentro del portal de Azure.
+
+\end{enumerate}
+
+Esperar a que el estado de la máquina virtual sea ``En ejecución``.
+
+\section{Eliminar una máquina virtual}
+
+Para eliminar una máquina virtual:
+
+\begin{enumerate}
+
+\item Seleccionar la opción ``Eliminar`` en la página de la máquina virtual dentro del portal de Azure.
+
+\item Seleccionar los recursos a eliminar: disco de SO, interfaces de red y direcciones IP públicas.
+
+\item Aceptar la advertencia que dice que se eliminarán los recursos seleccionados.
+
+\item Dar clic en el botón ``Eliminar``.
+
+\end{enumerate}
+
+\section{Restablecer la contraseña de una máquina virtual}
+
+En caso de no recordar la contraseña de un usuario de una máquina virtual, se puede realizar el siguiente procedimiento:
+
+\begin{enumerate}
+
+\item Ejecutar el portal de Azure.
+
+\item Seleccionar ``Máquinas virtuales``. La máquina virtual debe estar encendida.
+
+\item Seleccionar la máquina virtual que se desea modificar.
+
+\item En el menú izquierdo, seleccionar ``Restablecer contraseña``.
+
+\item En el menú ``Modo``, seleccionar ``Restablecer contraseña``.
+
+\item En ``Nombre de usuario``, ingresar el usuario.
+
+\item En ``Contraseña``, ingresar la nueva contraseña.
+
+\item En ``Confirmar contraseña``, repetir la nueva contraseña.
+
+\item Dar clic en el ícono ``Actualizar``.
+
+\end{enumerate}
+
+\section{Crear una imagen de una máquina virtual con Ubuntu}
+
+Vamos a ver cómo crear la imagen de una máquina virtual con Ubuntu en Azure y cómo crear máquinas virtuales a partir de la imagen.
+
+Una máquina virtual generalizada es una máquina virtual cuyo sistema operativo se ha despojado de la configuración específica y la configuración de usuarios.
+
+Una imagen generalizada es la captura de un sistema operativo de una máquina virtual generalizada..
+
+\subsection{Notas importantes}
+
+\begin{enumerate}
+
+\item La captura de la imagen de una máquina virtual inutiliza la máquina virtual ya que una máquina virtual generalizada no se puede iniciar o modificar.
+
+\item La generalización de una máquina virtual no implica que se borre toda la información confidencial que pudiera existir en la máquina virtual. Es muy importante considerar lo anterior si se va a redistribuir la imagen de la máquina virtual.
+
+\item La generalización de una máquina virtual no elimina el archivo /etc/resolv.conf (ver: resolvconf)
+
+\item La generalización de una máquina virtual deshabilita la contraseña de root.
+
+\item La opción +user del comando waagent elimina la última cuenta creada en la máquina virtual incluyendo el directorio del usuario. Si se desea conservar el usuario y el directorio, no se deberá utilizar la opción +user al generalizar la máquina virtual mediante el comando waagent.
+
+\item Para generalizar una máquina virtual con Windows se utiliza el programa sysprep.exe, ver: https://docs.microsoft.com/en-us/azure/virtual-machines/generalize.
+
+\item Una imagen se cobra de acuerdo al espacio en disco que ocupa, ver: Precios de Managed Disks.
+
+\item El tamaño del disco predeterminado en la imagen es el tamaño del disco de sistema operativo de la máquina virtual. Al crear la máquina virtual a partir de la imagen, el tamaño del disco de sistema operativo podrá ser mayor al que tenía la máquina virtual original, pero no podrá ser de menor tamaño.
+
+\end{enumerate}
+
+Para generalizar la máquina virtual utilizaremos el agente \texttt{waagent}, que elimina los datos específicos de la máquina virtual.
+
+\begin{enumerate}
+
+\item Crear una máquina virtual con Ubuntu.
+
+\item Abrir una ventana cmd de Windows o una terminal de Linux o MacOs.
+
+\item Ejecutar el programa ssh en la ventana, pasando como parámetros el usuario (por ejemplo ubuntu) y la ip pública de la máquina virtual:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh usuario@ip
+\end{SourceCode}
+
+\begin{enumerate}
+
+\item Para generalizar la máquina virtual y eliminar la última cuenta de usuario creada incluyendo el directorio del usuario, ejecutar el comando:
+
+\end{enumerate}
+
+\begin{SourceCode}
+sudo waagent -deprovision+user
+\end{SourceCode}
+
+Si se quiere conservar en la imagen la última cuenta de usuario creada, ejecutar el comando:
+
+\begin{SourceCode}
+sudo waagent -deprovision
+\end{SourceCode}
+
+\begin{enumerate}
+
+\item En el portal de Azure seleccionar la máquina virtual que se quiera capturar como imagen.
+
+\item Seleccionar la opción ``Captura``.
+
+\end{enumerate}
+
+6.1 En la opción ``Compartir imagen con Shared Image Gallery`` seleccionar ``No, capturar solo una imagen administrada``.
+
+\begin{enumerate}
+
+\item Marcar la casilla ``Eliminar automáticamente esta máquina virtual después de crear la imagen``, ya que una máquina virtual generalizada no se puede iniciar o modificar.
+
+\item Ingresar el nombre de la imagen a crear.
+
+\item Dar clic en el botón ``Crear``.
+
+\item Dar clic en la campana de notificaciones para verificar que se haya creado la imagen de la máquina virtual.
+
+\end{enumerate}
+
+\section{Crear una máquina virtual a partir de una imagen}
+
+\begin{enumerate}
+
+\item En la sección ``Todos los recursos`` en el portal de Azure seleccionar la imagen de la máquina virtual.
+
+\item Seleccionar la opción ``+Crear máquina virtual``.
+
+\item Seleccionar el grupo de recursos donde se creará la máquina virtual.
+
+\item Ingresar el nombre de la máquina virtual.
+
+\item Seleccionar el tamaño de la máquina virtual.
+
+\item Seleccionar el tipo de autenticación (Clave pública SSH o Contraseña). En su caso, ingresar el usuario y contraseña.
+
+\item Dar clic en el botón ``Siguiente: Discos >``
+
+\item Seleccionar el tipo de disco del sistema operativo (p.e. HDD estándar). Notar que el tamaño predeterminado del disco es el tamaño del disco de sistema operativo de la máquina virtual original. Se puede seleccionar un tamaño mayor pero no un tamaño menor al tamaño del disco original.
+
+\item Si no hay otra configuración que se quiera realizar, dar clic en el botón ``Revisar y crear``.
+
+\item Dar clic en el botón ``Crear``.
+
+\end{enumerate}
+
+\chapter{Preguntas}
+
+\begin{SourceCode}
+¿Qué método de la clase ByteBuffer me permite obtener una instancia de ByteBuffer a partir de un arreglo de bytes?
+\end{SourceCode}
+
+.wrap()
+
+\begin{SourceCode}
+¿Qué método de la clase ByteBuffer me permite obtener un arreglo de bytes a partir de una instancia de ByteBuffer?
+\end{SourceCode}
+
+.array()
+
+\begin{SourceCode}
+¿Qué es una barrera en hilos?
+\end{SourceCode}
+
+Es cuando un thread espera a uno o más threads.
+
+\begin{SourceCode}
+¿Qué es la sección crítica de un programa?
+\end{SourceCode}
+
+Las intrucciones que ejecuta un thread.
+
+\begin{SourceCode}
+¿Qué es starvation/inanición?
+\end{SourceCode}
+
+Es cuando un thread quiere entrar a un lock pero nunca puede lograrlo.
+
+\begin{SourceCode}
+¿Cómo se instala ntp en ubuntu?
+\end{SourceCode}
+
+sudo apt install ntp
+
+\begin{SourceCode}
+¿Cómo se sincronizan los segundos UTC con los segundos TAI?
+\end{SourceCode}
+
+Se adelanta el tiempo UTC para alcanzar el tiempo TAI, estos segundos que se adelantan se les conocen como segundos vacios
+
+\chapter{Proxy}
+
+Un proxy es un servidor cuya función es recibir el tráfico TCP de un cliente y reenviarlo a un servidor final, así mismo, recibir el tráfico TCP del servidor y reenviarlo al cliente.
+
+Existen diferentes tipos de proxies, entre otros:
+
+\begin{itemize}
+
+\item \textbf{Proxy transparente:} redirige el tráfico TCP sin que el cliente se dé cuenta de que existe un proxy entre el cliente y el servidor. Reenvía el tráfico TCP sin considerar un protocolo específico sobre TCP, como HTTP, SMTP o FTP.
+
+\item \textbf{Proxy inverso:} recibe el tráfico de red de un cliente y lo distribuye entre diferentes servidores de acuerdo con una configuración específica, ocultando las direcciones IP de los servidores.
+
+\end{itemize}
+
+Un proxy inverso también puede:
+
+\begin{itemize}
+
+\item Almacenar contenido estático, como imágenes y archivos JS o CSS.
+
+\item Distribuir tráfico mediante reglas de balanceo de carga.
+
+\item Distribuir tráfico de acuerdo con la petición, como un API gateway.
+
+\item Centralizar la gestión de la comunicación SSL utilizando un solo certificado digital en el proxy.
+
+\item \textbf{Proxy HTTP/HTTPS:} permite monitorear y filtrar las peticiones que envía el cliente al servidor HTTP, así como las respuestas del servidor.
+
+\end{itemize}
+
+\section{Arquitectura de un proxy transparente}
+
+Un proxy transparente consta de un servidor y un cliente.
+
+Cuando el servidor del proxy recibe una conexión del cliente, el cliente del proxy se conecta al servidor.
+
+El servidor del proxy recibe tráfico de red del cliente y lo envía al servidor, así mismo, el cliente del proxy recibe tráfico de red del servidor y lo envía al cliente.
+
+\section{Implementación de un proxy transparente en Java}
+
+Vamos a implementar un proxy transparente mediante un servidor TCP multithread.
+
+Cuando el servidor del proxy recibe la conexión del cliente, crea un thread de tipo Worker\_1, éste thread crea un segundo thread de tipo Worker\_2.
+
+El thread de tipo Worker\_2 se conecta al servidor remoto y se encarga de reenviar el tráfico TCP del servidor remoto al cliente.
+
+El thread de tipo Worker\_1 se encarga de reenviar el tráfico TCP del cliente al servidor remoto.
+
+Debido a que un proxy transparente no implementa un protocolo específico sobre TCP, es necesario que el reenvío del tráfico TCP del cliente al servidor se pueda realizar en paralelo al reenvío del tráfico TCP del servidor al cliente. Por esta razón, es necesario crear dos threads que reenvíen el tráfico TCP de manera independiente (full-duplex).
+
+El código del proxy transparente es el siguiente:
+
+\begin{SourceCode}
+/*
+  Proxy.java
+  Carlos Pineda G. 2024
+*/
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.ServerSocket;
+class Proxy
+{
+  static String host_remoto;
+  static int puerto_remoto;
+  static int puerto_local;
+  static class Worker_1 extends Thread
+  {
+    Socket cliente_1,cliente_2;
+    Worker_1(Socket cliente_1)
+    {
+      this.cliente_1 = cliente_1;
+    }
+    public void run()
+    {
+      try
+      {
+        // se conecta al host remoto
+        cliente_2 = new Socket(host_remoto,puerto_remoto);
+        // thread que dirige el tráfico del host remoto al cliente
+        new Worker_2(cliente_1,cliente_2).start();
+        InputStream entrada_1 = cliente_1.getInputStream();
+        OutputStream salida_2 = cliente_2.getOutputStream();
+        byte[] buffer = new byte[1024];
+        int n;
+        while((n = entrada_1.read(buffer)) != -1)
+        {
+          salida_2.write(buffer,0,n);
+          salida_2.flush();
+        }
+      }
+      catch (IOException e)
+      {
+        // captura silenciosamente las excepciones por desconexión
+      }
+      finally
+      {
+        try
+        {
+          if (cliente_1 != null) cliente_1.close();
+          if (cliente_2 != null) cliente_2.close();
+        }
+        catch (IOException e2)
+        {
+          e2.printStackTrace();
+        }
+      }
+    }
+  }
+  static class Worker_2 extends Thread
+  {
+    Socket cliente_1,cliente_2;
+    Worker_2(Socket cliente_1,Socket cliente_2)
+    {
+      this.cliente_1 = cliente_1;
+      this.cliente_2 = cliente_2;
+    }
+    public void run()
+    {
+      try
+      {
+        InputStream entrada_2 = cliente_2.getInputStream();
+        OutputStream salida_1 = cliente_1.getOutputStream();
+        byte[] buffer = new byte[4096];
+        int n;
+        while((n = entrada_2.read(buffer)) != -1)
+        {
+          salida_1.write(buffer,0,n);
+          salida_1.flush();
+        } 
+      }
+      catch (IOException e)
+      {
+        // captura silenciosamente las excepciones por desconexión
+      }
+      finally
+      {
+        try
+        {
+          if (cliente_1 != null) cliente_1.close();
+          if (cliente_2 != null) cliente_2.close();
+        }
+        catch (IOException e2)
+        {
+          e2.printStackTrace();
+        }
+      }
+    }
+  }
+  public static void main(String[] args) throws Exception
+  {
+    if (args.length != 3)
+    { 
+      System.err.println(``Uso:\njava Proxy <host-remoto> <puerto-remoto> <puerto-local>``);
+      System.exit(1);
+    }
+    host_remoto = args[0];
+    puerto_remoto = Integer.parseInt(args[1]);
+    puerto_local = Integer.parseInt(args[2]);
+    System.out.println(``host_remoto: `` + host_remoto + ``, puerto_remoto: `` + puerto_remoto + ``, puerto_local: `` + puerto_local);
+    ServerSocket ss = new ServerSocket(puerto_local);
+    for(;;)
+    {
+      // espera una conexión del cliente
+      Socket cliente_1 = ss.accept();
+      // thread que dirige el tráfico del cliente al host remoto
+      new Worker_1(cliente_1).start();
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Servidor.java}
+
+El programa Servidor.java va a esperar una conexión del cliente, entonces recibirá los datos que envía el cliente y a su vez, enviará datos al cliente.
+
+Primeramente, vamos a crear un socket servidor que va a abrir, en este caso, el puerto 50000:
+
+\begin{SourceCode}
+ServerSocket servidor = new ServerSocket(50000);
+\end{SourceCode}
+
+Notar que en Windows, por razones de seguridad el firewall solicita al usuario administrador permiso para abrir este puerto.
+
+Ahora invocamos el método accept de la clase ServerSocket.
+
+El método accept es bloqueante, lo que significa que el thread principal del programa quedará en estado de espera pasiva (una espera que no ocupa ciclos de CPU) hasta recibir una conexión del cliente. Cuando se recibe la conexión el método accept regresa un socket, en este caso vamos a declarar una variable de tipo Socket llamada ``conexion``:
+
+\begin{SourceCode}
+Socket conexion = servidor.accept();
+\end{SourceCode}
+
+Una vez establecida la conexión con el cliente, el servidor podrá enviar y recibir datos.
+
+Creamos un stream de salida y un stream de entrada:
+
+\begin{SourceCode}
+DataOutputStream salida = new DataOutputStream(conexion.getOutputStream());
+DataInputStream entrada = new DataInputStream(conexion.getInputStream());
+\end{SourceCode}
+
+Recordemos que el cliente envía un entero de 32 bits, entonces el servidor deberá recibir este dato utilizando el método readInt:
+
+\begin{SourceCode}
+int n = entrada.readInt();
+System.out.println(n);
+\end{SourceCode}
+
+Ahora el servidor recibe un número punto flotante de 64 bits utilizando el método readDouble:
+
+\begin{SourceCode}
+double x = entrada.readDouble();
+System.out.println(x);
+\end{SourceCode}
+
+El servidor recibe una cadena de cuatro caracteres:
+
+\begin{SourceCode}
+byte[] buffer = new byte[4];
+read(entrada,buffer,0,4);
+System.out.println(new String(buffer,``UTF-8``));
+\end{SourceCode}
+
+El servidor envía una cadena de cuatro caracteres:
+
+\begin{SourceCode}
+salida.write(``HOLA``.getBytes());
+\end{SourceCode}
+
+Ahora vamos a recibir los cinco números punto flotante empacados en un arreglo de bytes.
+Recordemos que los cinco números punto flotante de 64 bits ocupan 40 bytes (5x8bytes).
+
+\begin{SourceCode}
+byte[] a = new byte[5*8];
+read(entrada,a,0,5*8);
+\end{SourceCode}
+
+Una vez recibido el arreglo de bytes, lo convertimos a un objeto \texttt{ByteBuffer} utilizando el método wrap de la clase \texttt{ByteBuffer}:
+
+\begin{SourceCode}
+ByteBuffer b = ByteBuffer.wrap(a);
+\end{SourceCode}
+
+Para extraer los números punto flotante, utilizamos el método getDouble de la clase ByteBuffer:
+
+\begin{SourceCode}
+for (int i = 0; i < 5; i++) System.out.println(b.getDouble());    
+\end{SourceCode}
+
+Finalmente, cerramos la conexión con el cliente:
+
+\begin{SourceCode}
+conexion.close();
+\end{SourceCode}
+
+\section{Un cliente con reintentos de conexión}
+
+Como vimos anteriormente, para que el cliente se conecte al servidor es necesario que el servidor inicie su ejecución antes que el cliente, sin embargo, para algunas aplicaciones el cliente debe esperar a que el servidor inicie su ejecución.
+
+Veamos ahora cómo implementar el reintento de conexión cuando el servidor no está ejecutando.
+
+\begin{SourceCode}
+Socket conexion = null;
+for(;;)
+  try
+  {
+    conexion = new Socket(``localhost``,50000);
+    break;
+  }
+  catch (Exception e)
+  {
+    Thread.sleep(100);
+  }
+\end{SourceCode}
+
+Como podemos ver, cada vez que el cliente falla en establecer la conexión con el servidor, espera 100 milisegundos y vuelve a intentar la conexión. Cuando el cliente logra conectarse con el servidor entonces sale del ciclo for.
+
+\chapter{Servidor HTTP}
+
+\section{¿Qué es un servidor HTTP?}
+
+La clase de hoy vamos a construir un servidor HTTP utilizando como base el servidor multi-thread que vimos anteriormente.
+
+Un servidor HTTP es un servidor que recibe peticiones HTTP a través de una conexión TCP.
+
+En general, los servidores HTTP son multi-thread, de tal manera que el servidor creará un thread cada vez que un cliente se conecta, de esta forma cada thread se encarga de recibir la petición y enviar la respuesta al cliente.
+
+Por default los servidores HTTP reciben conexiones a través del puerto 80, sin embargo un servidor HTTP puede utilizar otro puerto, por ejemplo el puerto 8080.
+
+El protocolo HTTP define las operaciones que el servidor HTTP puede realizar cuando recibe una petición, a estas operaciones se les conoce como ``métodos``.
+
+Los métodos HTTP más utilizados son: GET, POST, PUT, DELETE y HEAD.
+
+El método GET es utilizado por los navegadores (browsers) para solicitar un recurso o contenido al servidor HTTP.
+
+Si el recurso existe, el servidor regresa al navegador como mínimo lo siguiente: el código 200 (OK), el tipo del recurso, la longitud del recurso y el contenido.
+
+Si el recurso no existe, el servidor regresa al navegador el código 404 (Not Found).
+
+El método HEAD es idéntico al método GET, solo que el método HEAD no regresa el recurso.
+
+Más adelante veremos cómo utilizar los métodos GET, POST, PUT y DELETE para implementar servicios web de tipo REST.
+
+\section{\texttt{ServidorHTTP.java}}
+
+Ahora vamos a implementar un servidor HTTP; tomaremos como base el código del servidor multithread que vimos la clase anterior.
+
+El servidor HTTP escuchará el puerto 80 (el puerto default para HTTP).
+
+El servidor HTTP va a responder dos end-points:
+
+\begin{itemize}
+
+\item \texttt{/suma?a=\&lt;valor\&gt;\&amp;b=\&lt;valor\&gt;\&amp;c=\&lt;valor\&gt;} va a regresar la suma de los tres valores.
+
+\item \texttt{/} va a regresar una página HTML incluyendo un botón; cuando se presione el botón se hará la siguiente petición: \texttt{/suma?a=1\&amp;b=2\&amp;c=3}.
+
+\end{itemize}
+
+Tal como lo hace el servidor multithread que vimos la clase anterior, cada vez que un cliente (navegador) se conecte al servidor HTTP, se creará un thread el cual recibirá como parámetro el socket cliente.
+
+Primeramente, escribimos las siguientes instrucciones en el método run():
+
+\begin{SourceCode}
+BufferedReader entrada = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
+PrintWriter salida = new PrintWriter(conexion.getOutputStream());
+\end{SourceCode}
+
+En este caso no vamos a utilizar las clases DataInputStream y DataOutpuStream debido a que necesitamos los métodos readLine() y println() los cuales están disponibles en las clases BufferedReader y PrintWriter, respectivamente.
+
+Notar que creamos la instancia de BufferedReader a partir del InputStream disponible en el socket, así mismo, creamos la instancia de PrintWriter a partir del OutputStream disponible en el socket.
+
+Ahora vamos a recibir la petición mediante el método readLine().
+
+Cada línea en el protocolo HTTP termina con un carriage return (código ASCII 13) y line feed (código ASCII 10), por tanto, para leer la petición utilizamos el método readline().
+
+\begin{SourceCode}
+String req = entrada.readLine();
+System.out.println(``Petición: `` + req);
+\end{SourceCode}
+
+El método readLine() reconoce cualquier terminador de línea (\textbackslash{}r, \textbackslash{}n o \textbackslash{}r\textbackslash{}n) y lo descarta; no obstante, la petición enviada por el cliente termina con \textbackslash{}r\textbackslash{}n, la string ``req`` no contiene \textbackslash{}r ni \textbackslash{}n.
+
+Además de la petición, el navegador envía encabezados; cada encabezado termina con carriage return  y line feed).
+
+Después de los encabezados, el navegador envía una línea en blanco (carriage return  y line feed).
+
+Podemos leer los encabezados mediante el siguiente código (notar que no estamos procesando los encabezados, solo los desplegamos):
+
+\begin{SourceCode}
+for (;;)
+{
+  String encabezado= entrada.readLine();
+  System.out.println(``Encabezado: `` + encabezado);
+  if (encabezado.equals(````)) break;
+}
+\end{SourceCode}
+
+Para extraer los valores que pasan como parámetros a la función ``suma``, implementaremos la función valor().
+
+Esta función obtiene el valor de cada parámetro en la URL; recibe como parámetros una string con los parámetros incluidos en la URL, y el nombre de uno de los parámetros (variable), entonces regresa el valor del parámetro.
+
+\begin{SourceCode}
+int valor(String parametros, String variable) throws Exception
+{
+  String[] p = parametros.split(``&``);
+  for (int i = 0; i < p.length; i++)
+  {
+    String[] s = p[i].split(``=``);
+    if (s[0].equals(variable))
+      return Integer.parseInt(s[1]);
+  }
+  throw new Exception(``Se espera la variable: `` + variable);
+}
+\end{SourceCode}
+
+Para que el servidor HTTP procese la petición, vamos a utilizar el método startsWith() de la clase String.
+
+\begin{SourceCode}
+if (req.startsWith(``GET / ``))
+{
+  String respuesta =
+    ``<html>`` +
+    ``<script>`` +
+    ``function get(req,callback)`` +
+    ``{`` +
+    ``const xhr = new XMLHttpRequest();`` +
+    ``xhr.open('GET', req, true);`` +
+    ``xhr.onload=function()`` +
+    ``{`` +
+    ``if (callback != null) callback(xhr.status,xhr.response);`` +
+    ``};`` +
+    ``xhr.send();`` +
+    ``}`` +
+    ``</script>`` +
+    ``<body>`` +
+    ``<button onclick=\``get('/suma?a=1&b=2&c=3',function(status,response){alert('estatus:' + status + ' ' + 'respuesta: ' + response);})\``>Aceptar</button>`` +
+    ``</body>`` +
+    ``</html>``;
+  salida.println(``HTTP/1.1 200 OK``);
+  salida.println(``Content-type: text/html; charset=utf-8``);
+  salida.println(``Content-length: `` + respuesta.length());
+  salida.println(``Connection: close``);
+  salida.println();
+  salida.println(respuesta);
+  salida.flush();
+}
+\end{SourceCode}
+
+\begin{SourceCode}
+else
+if (req.startsWith(``GET /suma?``))
+{
+  String parametros = req.split(`` ``)[1].split(``\\?``)[1];
+  String respuesta = String.valueOf(valor(parametros,``a``) + valor(parametros,``b``) +
+                                                               valor(parametros,``c``));
+  salida.println(``HTTP/1.1 200 OK``);
+  salida.println(``Access-Control-Allow-Origin: *``);
+  salida.println(``Content-type: text/plain; charset=utf-8``);
+  salida.println(``Content-length: ``+respuesta.length());
+  salida.println(``Connection: close``);
+  salida.println();
+  salida.println(respuesta);
+  salida.flush();
+}
+ 
+\end{SourceCode}
+
+Notar que en la respuesta que envía el servidor HTTP al navegador, es necesario separar los encabezados del contenido, mediante una línea en blanco; en este caso el contenido es de tipo texto.
+
+El servidor HTTP envía al navegador el código 200 indicando que no hubo error, además envía el tipo mime del contenido utilizando el encabezado Content-Type y la longitud del contenido mediante el encabezado Content-Length.
+
+El navegador debe conocer el tipo mime del contenido para poder interpretarlo correctamente, por ejemplo, si el recurso es una página web, el tipo mime es ``text/html``, entonces el navegador interpretará el contenido como un archivo HTML (desplegará botones, campos de captura, etc.).
+
+Si el tipo mime es text/plain, el navegador desplegará el texto en la pantalla.
+
+La forma general del encabezado Content-Type es la siguiente:
+
+\begin{SourceCode}
+Content-Type: tipo/subtipo
+\end{SourceCode}
+
+Donde tipo es el tipo del contenido (por ejemplo, text) y subtipo es una especificación del tipo (por ejemplo: html).
+
+A la cadena tipo/subtipo se le llama tipo mime (Multipurpose Internet Mail Extensions).
+
+Los servidores pueden obtener el tipo mime de un archivo a partir de la extensión del archivo. Ver: Lista completa de tipos MIME
+
+Por default, el protocolo HTTP/1.1 deja abierta la conexión entre el cliente y el servidor, de manera que el cliente (navegador) pueda enviar varias peticiones utilizando la misma conexión.
+
+En este caso, el servidor envió al navegador el encabezado “Connection: close”, indicando que la conexión se cerrará después de enviar la respuesta.
+
+En código anterior, el servidor HTTP regresa al navegador un texto plano: la suma de los valores que pasan como parámetros en la URL.
+
+Más adelante se explicará el encabezado ``Access-Control-Allow-Origin``, el cual habilita CORS (Cross-Origin Resource Sharing).
+
+\section{Respuesta \texttt{404 File Not Found}}
+
+Si la petición enviada por el navegador no inicia con ``/`` o ``GET /suma?`` entonces el servidor regresará al navegador el código de error 404 indicando que no se encontró el recurso:
+
+\begin{SourceCode}
+else
+{
+  String respuesta = ``<html><body><h1>404 File Not Found</h1></body></html>``;
+  salida.println(``HTTP/1.1 404 Not Found``);
+  salida.println(``Content-Type: text/html; charset=utf-8``);
+  salida.println(``Content-Length: `` + respuesta.length());
+  salida.println(``Connection: close``);
+  salida.println();
+  salida.println(respuesta);
+  salida.flush();
+}
+\end{SourceCode}
+
+Si queremos que el servidor envíe al navegador otro mensaje de error, podemos enviar un código entre 400 y 499, agregando un mensaje específico. Ver: Códigos de estado de respuesta HTTP.
+
+\section{CORS — Cross-Origin Resource Sharing}
+
+Supongamos que tenemos un servidor HTTP que actúa a la vez como servidor web y como servidor de aplicaciones (p.e. ServidorHTTP.java, Tomcat, Weblogic, GlassFish, IIS, etc.).
+
+El servidor HTTP va a alojar la página web p.html. Esta página web invoca (utilizando Javascript), el método web suma(int a,int b,int c)
+
+Cuando el navegador solicita la página web p.html al servidor, el servidor le envía la página.
+
+Supongamos que el usuario selecciona una opción en la página web, la cual invoca el método ``suma``.
+
+Entonces el servidor HTTP envía la respuesta al navegador, en este caso, el número 6 (la suma 1+2+3).
+
+¿Qué pasa si la página web está alojada en un servidor que ejecuta en una computadora diferente a la computadora donde ejecuta el método web?
+
+Para que el navegador no bloquee la respuesta del método web, la respuesta debe incluir uno o varios encabezados ``Access-Control-Allow-Origin``, cada encabezado deberá incluir el dominio desde el cual se permite el acceso al método web.
+
+Un asterisco * indica que cualquier origen puede acceder el método web.
+
+\section{El encabezado \texttt{Last-Modified}}
+
+Un servidor HTTP puede regresar al navegador una variedad de contenidos, por ejemplo, una página web, una imagen, un archivo, etc.
+
+En general, estos recursos no se modifican con frecuencia en el servidor, por esta razón es conveniente que el navegador guarde una copia del recurso y solo reciba una actualización del recurso cuando éste ha sido modificado en el servidor.
+
+Los navegadores almacenan copias de los recursos en una cache.
+
+Almacenar los recursos en la cache tiene muchas ventajas, entre otras: mejora la velocidad de carga, reduce el ancho de banda utilizado, ahorra energía en el cliente (esto es especialmente útil en dispositivos móviles), mejora la experiencia del usuario y reduce la carga en el servidor.
+
+Para que el navegador guarde un recurso en la cache, el servidor envía al navegador la respuesta ``HTTP/1.1 200 OK``, el encabezado ``Last-Modified`` y el recurso solicitado. El encabezado, ``Last-Modified`` le dice al navegador la fecha (en formato RFC1123) de la última modificación del recurso.
+
+Por ejemplo, la respuesta:
+
+\begin{SourceCode}
+HTTP/1.1 200 OK
+Last-Modified:  Fri, 25 Aug 2023 21:00:00 GMT
+\end{SourceCode}
+
+Le dice al navegador que guarde el recurso en la cache indicando así mismo la fecha de la última modificación, en este caso el viernes 25 de agosto de 2023 a las 21 horas tiempo GMT.
+
+Cada vez que el navegador solicita el recurso al servidor, el navegador agregará el siguiente encabezado a la petición:
+
+\begin{SourceCode}
+If-Modified-Since: Fri, 25 Aug 2023 21:00:00 GMT
+\end{SourceCode}
+
+Esto le dice al servidor que el navegador tiene una copia del recurso solicitado, indicando la fecha de última modificación (la cual le envío el servidor previamente utilizando el encabezado ``Last-Modified``).
+
+Entonces el servidor deberá comparar la fecha enviada por el navegador y la fecha de la última modificación del recurso en el servidor, si la primera fecha es menor a la segunda fecha, entonces el servidor deberá enviar al navegador la respuesta ``HTTP/1.1 200 OK``, el encabezado ``Last-Modified`` incluyendo la nueva fecha de modificación y el recurso solicitado. De otra forma, el servidor solo enviará al navegador la siguiente respuesta:
+
+\begin{SourceCode}
+HTTP/1.1 304 Not Modified
+\end{SourceCode}
+
+Como podemos ver, el navegador recibe la actualización del recurso solo si el recurso se modificó después de que el navegador lo recibió por última vez.
+
+¿Es conveniente guardar cualquier respuesta en la cache?
+
+No siempre, ya que en algunos casos las respuestas podrían ser distintas en cada petición, por ejemplo, la respuesta de un servicio web.
+
+En tal caso, el servidor no regresará al navegador el encabezado ``Last-Modified``, por tanto, el navegador no guardará en la cache la respuesta y tampoco enviará el encabezado ``If-Modified-Since`` en cada petición ulterior.
+
+\section{El encabezado \texttt{Cache-Control}}
+
+El encabezado Cache-Control es enviado por el servidor para controlar la cache del navegador.
+Las opciones más comunes del encabezado Cache-Control son las siguientes:
+
+\begin{itemize}
+
+\item \texttt{public}: el contenido puede almacenarse en forma pública; cualquier usuario puede tener acceso al contenido.
+
+\item \texttt{private}: el contenido debe almacenarse en forma privada en el navegador del usuario; solo el usuario tiene acceso al contenido.
+
+\item \texttt{no-store}: el contenido no debe almacenarse.
+
+\item \texttt{no-cache}: el contenido puede almacenarse en la cache, pero el navegador validará si fue modificado.
+
+\item \texttt{max-age=tiempo}: indica el tiempo en segundos que se guardará el contenido en la cache.
+
+\item \texttt{immutable}: indica que el contenido no será modificado por el servidor.
+
+\end{itemize}
+
+Es posible incluir varias opciones separadas por comas, considerando que las opciones más restrictivas pueden anular a las más permisivas.
+
+\section{El encabezado \texttt{Content-Disposition}}
+
+El encabezado Content-Disposition es enviado por el servidor, para indicar al navegador que guarde en el disco local el contenido que regresa una petición GET, en lugar de mostrarlo en la pantalla.
+
+Por ejemplo, el siguiente encabezado indica al navegador que guarde el archivo descargado con el nombre ``documento.pdf``:
+
+\begin{SourceCode}
+Content-Disposition: attachment; filename=``documento.pdf``
+\end{SourceCode}
+
+\section{Los encabezados \texttt{Server} y \texttt{Date}}
+
+Opcionalmente el servidor HTTP podría enviar al navegador los siguientes encabezados, indicando el nombre del servidor y la fecha:
+
+\begin{SourceCode}
+salida.println(``Server: ServidorHTTP.java``);
+salida.println(``Date: `` + new Date());
+\end{SourceCode}
+
+\section{¿Cómo obtener la IP del cliente?}
+
+Para desplegar la dirección IP del cliente que se conectó al servidor HTTP, podemos incluir la siguiente instrucción al principio del método run():
+
+\begin{SourceCode}
+System.out.println(conexion.getRemoteSocketAddress().toString());
+\end{SourceCode}
+
+En general, los servidores guardan en una bitácora la fecha y hora, la IP del cliente y la petición GET de manera que se pueda monitorear cualquier ataque que reciba el servidor HTTP.
+
+\chapter{Servidor multithread}
+
+Anteriormente vimos el programa Servidor.java el cual invoca el método accept para esperar una conexión del cliente, debido a que este método es bloqueante el programa queda en espera pasiva hasta que el cliente se conecta.
+
+Cuando el servidor recibe una conexión, el método accept regresa un socket. Entonces el cliente y el servidor podrán intercambiar datos. Generalmente el servidor procesa los datos que recibe del cliente y al terminar vuelve a invocar el método accept para esperar otra conexión.
+
+Sin embargo, mientras el servidor procesa los datos que recibe del cliente, no puede recibir otra conexión. Para resolver este problema los servidores se construyen utilizando threads.
+
+Entonces, vamos a ver cómo construir un servidor multithread.
+
+\section{Ejecución paralela y ejecución concurrente}
+
+En las clases de Sistemas Operativos se explica que un thread (hilo) es la ejecución secuencial de las instrucciones de un programa.
+
+Un proceso puede crear uno o más threads (hilos de ejecución), los cuales van a ejecutar simultáneamente.
+
+Si la computadora tiene un CPU dual core, entonces el CPU podrá ejecutar en paralelo (al mismo tiempo) dos threads, si el CPU es quad core entonces podrá ejecutar en paralelo cuatro threads, y así sucesivamente.
+
+Por otra parte, si un programa crea un número de threads mayor al número de procesadores físicos (cores) disponibles en la computadora, entonces los threads ejecutarán en forma concurrente (por turnos).
+
+\section{Programación multithread en Java}
+
+Supongamos que tenemos una clase llamada P.
+
+Dentro de la clase P definimos una clase interior (nested class) llamada Worker la cual es subclase de la clase Thread:
+
+\begin{SourceCode}
+class P
+{
+  static class Worker extends Thread
+  {
+    public void run()
+    {
+    }
+  }
+  public static void main(String[] args) throws Exception
+  {
+  }
+}
+\end{SourceCode}
+
+Podemos ver que hemos incluido en la clase Worker un método público llamado run el cual no tiene parámetros ni regresa resultado.
+
+\section{El método start}
+
+Para iniciar la ejecución de un thread, debemos crear una instancia de la clase Worker e invocar el método start (este método se hereda de la clase Thread):
+
+\begin{SourceCode}
+Worker w = new Worker();
+w.start();
+\end{SourceCode}
+
+Entonces se crea un hilo que inicia invocando el método run que hemos definido en la clase Worker.
+
+Un thread finaliza su ejecución cuando el método run termina. Cuando un thread finaliza, no puede volver a ejecutarse.
+
+\section{El método join}
+
+Supongamos que el thread principal (el thread que invocó el método start) requiere esperar que el thread w termine su ejecución, entonces el thread principal deberá invocar el método join:
+
+\begin{SourceCode}
+Worker w = new Worker();
+w.start();
+w.join();
+\end{SourceCode}
+
+El método join queda en un estado de espera pasiva mientras el thread ``w`` se encuentra ejecutando, cuando el thread ``w`` termina, el método join regresa, entonces el thread principal continua su ejecución.
+
+Ahora supongamos que el thread principal requiere crear dos threads y esperar a que terminen su ejecución. Entonces creamos dos instancias de la clase Worker e invocamos los métodos start y join para cada thread:
+
+\begin{SourceCode}
+Worker w1 = new Worker();
+Worker w2 = new Worker();
+w1.start();
+w2.start();
+w1.join();
+w2.join();
+\end{SourceCode}
+
+Cuando un thread (en este caso el thread principal) espera la terminación de uno o más threads para continuar su ejecución, se dice que se implementa una barrera. En este caso estamos implementando una barrera mediante dos métodos join.
+
+\section{Servidor2.java}
+
+Ahora vamos a implementar un servidor de sockets multithread.
+La idea es que el servidor multithread espere conexiones y para cada conexión cree un thread que procese los datos que envía el cliente.
+
+Vamos a invocar el método accept dentro de un ciclo, y para cada conexión vamos a crear un thread.
+
+\begin{SourceCode}
+class Servidor2
+{
+  static class Worker extends Thread
+  {
+    Socket conexion;
+    Worker(Socket conexion)
+    {
+      this.conexion = conexion;
+    }
+    public void run()
+    {
+    }
+  }
+  public static void main(String[] args) throws Exception
+  {
+    ServerSocket servidor = new ServerSocket(50000);
+    for (;;)
+    {
+      Socket conexion = servidor.accept();
+      Worker w = new Worker(conexion);
+      w.start();
+    }
+  }
+}
+\end{SourceCode}
+
+Este código será la base para otros programas que desarrollaremos en el curso.
+
+El constructor de la clase Worker pasa como parámetro el socket que crea el método accept, ya que el método run requiere el socket para recibir y enviar datos al cliente.
+
+Ahora agregaremos el siguiente código al método run:
+
+\begin{SourceCode}
+try
+{
+  DataOutputStream salida = new DataOutputStream(conexion.getOutputStream());
+  DataInputStream entrada = new DataInputStream(conexion.getInputStream());
+  int n = entrada.readInt();
+  System.out.println(n);
+  double x = entrada.readDouble();
+  System.out.println(x);
+  byte[] buffer = new byte[4];
+  read(entrada,buffer,0,4);
+  System.out.println(new String(buffer,``UTF-8``));
+  salida.write(``HOLA``.getBytes());
+  byte[] a = new byte[5*8];
+  read(entrada,a,0,5*8);
+  ByteBuffer b = ByteBuffer.wrap(a);
+  for (int i = 0; i < 5; i++) System.out.println(b.getDouble());
+}
+catch(Exception e)
+{
+  System.err.println(e.getMessage());
+}
+finally
+{
+  try
+  {
+    conexion.close();
+  }
+  catch (Exception e2)
+  {
+    System.err.println(e2.getMessage());
+  }
+}
+\end{SourceCode}
+
+Podemos ver en el programa Servidor2.java que el método run crea los streams que se utilizarán para enviar y recibir datos del cliente. Notar que el programa Servidor2.java es completamente compatible con el programa Cliente.java
+
+\chapter{Sincronización del acceso a memoria}
+
+\section{Operaciones de lectura y escritura}
+
+Los threads dentro de un proceso se comunican entre sí utilizando la memoria. Las operaciones que se realizan sobre la memoria son la lectura y escritura de variables (localidades de memoria).
+
+Para que un thread pueda leer los datos que escribe otro thread en la memoria, es necesario ordenar las operaciones de lectura y escritura que realizan los threads.
+
+Supongamos que tenemos dos threads, el thread T1 y el thread T2.
+
+Si el thread T2 escribe a una variable y posteriormente el thread T1 lee la variable, el thread T1 tendrá el valor que escribió el thread T2.
+
+\section{Orden escritura-escritura}
+
+Ahora supongamos que los threads T1 y T2 escriben al mismo tiempo una variable y posteriormente los threads leen al mismo tiempo la misma variable. ¿Qué valores leyeron los threads?
+
+Evidentemente no es posible garantizar que el thread T1 haya leído el valor que escribió el thread T2 o que haya leído el valor que escribió el mismo thread T1. 
+
+Igualmente, no es posible garantizar que el thread T2 haya leído el valor que escribió el thread T1 o que el thread T1 haya el valor que escribió el mismo thread T2.
+
+Entonces, para garantizar que un thread lee el valor de una variable escrito por otro thread, es necesario ordenar las operaciones de escritura y de lectura que realizan los threads.
+
+Ahora supongamos que el thread T1 espera a que el thread T2 escriba la variable, entonces después el thread T1 escribe a la variable.
+
+En este caso, el valor que leen los threads T1 Y T2 es el valor que escribió el thread T1.
+
+Notar que dos o más threads pueden leer simultáneamente una variable.
+
+\section{Orden escritura-lectura}
+
+Ahora supongamos que el thread T1 lee la variable y posteriormente el thread T2 escribe la variable ¿qué valor leyó el thread T1?
+
+Para que el thread T1 pueda leer el valor que escribe el thread T2, es necesario ordenar las operaciones de escritura y lectura.
+
+Para garantizar que el thread T1 lea el valor escrito por el thread T2, el thread T1 debe esperar a que el thread T2 escriba la variable.
+
+Si dos o más threads acceden a una misma variable, y al menos uno de los threads escribe la variable, entonces es necesario sincronizar el acceso de los threads a la variable.
+
+Sincronizar el acceso de los threads significa ordenar las operaciones de escritura y de lectura que realizan los threads.
+
+\section{La instrucción \texttt{synchronized}}
+
+Para ordenar las lecturas y escrituras que realizan los threads en Java, se utiliza la instrucción synchronized.
+
+\begin{SourceCode}
+synchronized (objeto)
+{
+  instrucciones
+}
+\end{SourceCode}
+
+Debemos recordar que en Java todos los objetos tienen un lock asociado.
+
+En la clase de Sistemas Operativos se explica que un lock (o cerrojo) es un mecanismo que permite limitar el acceso a un recurso compartido por varios procesos o threads, por ejemplo, una variable, un archivo, una impresora. etc. 
+
+A la capacidad que tiene un sistema de controlar el acceso a recursos compartidos se le conoce como exclusión mutua.
+
+La instrucción \texttt{synchronized} funciona de la siguiente manera:
+
+\begin{itemize}
+
+\item Primero se verifica si el lock del objeto está bloqueado. Si el lock está bloqueado, el thread espera a que se desbloquee.
+
+\item Si el lock está desbloqueado, el thread lo bloquea —se dice que adquiere el lock— y ejecuta las instrucciones dentro del bloque.
+
+\item Al terminar las instrucciones, el thread desbloquea el lock —se dice que libera el lock—. Entonces, el sistema operativo notifica a uno de los threads que esperan el lock para que lo adquiera y ejecute las instrucciones dentro del bloque.
+
+\item Al terminar, el thread desbloquea nuevamente el lock y el sistema operativo notifica a alguno de los threads que esperan.
+
+\end{itemize}
+
+Como podemos ver, la instrucción \texttt{synchronized} evita que dos o más threads ejecuten simultáneamente un bloque de instrucciones. Al bloque de instrucciones que solo puede ser ejecutado por un thread se le llama sección crítica.
+
+Veamos un ejemplo.
+
+Supongamos que tenemos dos threads que incrementan una variable estática llamada ``n`` dentro de un ciclo for.
+
+La variable estática ``n`` es ``global`` a todas las instancias de la clase, por tanto los threads pueden leer y escribir esta variable.
+
+\begin{SourceCode}
+class A extends Thread
+{
+  static long n;
+  public void run()
+  {
+    for (int i = 0; i < 100000; i++)
+        n++;
+  }
+  public static void main(String[] args) throws Exception
+  {
+    A t1 = new A();
+    A t2 = new A();
+    t1.start();
+    t2.start();
+    t1.join();
+    t2.join();
+    System.out.println( n );
+  }
+}
+\end{SourceCode}
+
+En este caso, la clase principal A es subclase de la clase Thread, por tanto hereda los métodos run, start y join (entre otros).
+
+El programa debería desplegar 200000 ya que cada thread incrementa 100,000 veces la variable ``n``.
+
+Preguntas:
+
+\begin{itemize}
+
+\item ¿Por qué despliega un número menor a 200,000?
+
+\item ¿Por qué cada vez que se ejecuta el programa despliega un número diferente?
+
+\end{itemize}
+
+La instrucción \texttt{n++} se compone de tres operaciones:
+
+\begin{itemize}
+
+\item Copiar el valor de la variable \texttt{n} a un registro del procesador.
+
+\item Incrementar el valor del registro.
+
+\item Escribir el valor del registro en la variable \texttt{n}.
+
+\end{itemize}
+
+Debido a que los threads t1 y t2 ejecutan en paralelo en una computadora con dos o más núcleos, el thread t1 puede leer y escribir la variable n al mismo tiempo que el thread t2:
+
+Dado que la lectura que realiza t1 no está ordenada con respecto a la escritura que hace t2 y que la lectura que realiza t2 no está ordenada con respecto a la escritura que hace t1, es posible que no se escriba algún incremento en la variable n lo que produce un valor final menor a 200,000.
+
+Entonces debemos impedir que ambos threads ejecuten al mismo tiempo la instrucción \texttt{n++}. Justamente esta instrucción es la sección crítica.
+
+Para resolver este problema vamos a ejecutar la instrucción \texttt{n++} dentro de una instrucción \texttt{synchronized}; notar que utilizamos el objeto \texttt{obj} para sincronizar los threads.
+Entonces el código del programa queda de la siguiente manera:
+
+\begin{SourceCode}
+class A extends Thread
+{
+  static long n;
+  static Object obj = new Object();
+  public void run()
+  {
+    for (int i = 0; i < 100000; i++)
+      synchronized(obj)
+      {
+        n++;
+      }
+  }
+  public static void main(String[] args) throws Exception
+  {
+    A t1 = new A();
+    A t2 = new A();
+    t1.start();
+    t2.start();
+    t1.join();
+    t2.join();
+    System.out.println( n );
+  }
+}
+\end{SourceCode}
+
+Al ejecutar varias veces el programa anterior podemos ver que el valor final de la variable n siempre es 200,000, debido a que ahora las operaciones de lectura y escritura se ejecutan en el orden correcto:
+
+Si bien es cierto que es necesario sincronizar los threads para que el programa funcione correctamente, la sincronización hace más lento el programa, ya que obliga a que ciertas partes del programa se ejecuten en serie (una tras otra) y no en paralelo (al mismo tiempo).
+
+\section{Sincronización de threads}
+
+\subsection{El método \texttt{wait()}}
+
+Cuando un thread ejecuta el método wait() de la clase Object, el thread entra en un estado de espera pasiva (el thread no consume ciclos de CPU mientras espera).
+
+El método wait() debe utilizarse dentro de una instrucción synchronized.
+
+En Java cada lock tiene una cola de espera, de manera que cada thread que ejecuta el método wait(), se forma en la cola de espera del lock asociado a la instrucción synchronized.
+
+Una vez que el thread queda en estado de espera pasiva, se libera el lock. Cuando el thread ``despierta`` vuelve a adquirir el lock.
+
+El método wait() puede producir la excepción InterruptedException, por tanto es necesario gestionar las interrupciones colocando el método wait() dentro de un bloque try.
+
+\subsubsection{Nota}
+
+Si un método no gestiona una interrupción, es necesario agregar al encabezado del método la claúsula throws seguida de una lista de las interrupciones que pueden producirse dentro del método, esto le dice al compilador que el método no gestiona esas interrupciones, por tanto, tendrá que gestionarlas el método que invoca al método actual.
+
+Por ejemplo:
+
+\begin{SourceCode}
+public static void main(String[] args) throws Exception
+\end{SourceCode}
+
+En este caso, el método “main” no va a gestionar ninguna excepción, por tanto, la cláusula “throws Exception” le dice al compilador que la gestión de la excepción Exception y todas sus subclases, la realizará el método que invoca al método “main”.
+
+Cuando usamos “throws Exception”, la gestión de todas las excepciones se delega al método que invoca el método actual, debido a que ``Exception`` es la superclase de todas las excepciones.
+
+Debido a que el método “main” no es invocado por otro método Java, si se produce una excepción en el método “main”, el programa termina y se despliega en la pantalla la excepción que se produjo.
+
+\subsection{Los métodos \texttt{notify()} y \texttt{notifyAll()}}
+
+Para ``despertar`` un thread que se encuentra en espera pasiva, otro thread deberá invocar el método notify() o el método notifyAll().
+
+El método notify() ``despierta`` el primer thread que se encuentra en la cola de espera del lock.
+
+El método notifyAll() ``despierta`` todos los threads que se encuentran en la cola de espera del lock.
+
+Al igual que el método wait(), los métodos notify() y notifyAll() deben ejecutar dentro de una instrucción synchronized.
+
+Debido a que los métodos wait(), notify() y notifyAll() son métodos de la clase Object, se heredan a todas las clases en Java.
+
+El siguiente programa muestra un ejemplo del uso de wait() y notify().
+
+En este caso se crea un thread el cual entra en modo de espera pasiva invocando el método wait(), entonces el thread principal ``despierta`` el thread invocando el método notify().
+
+\begin{SourceCode}
+class Notificacion
+{
+  static Object obj = new Object();
+  static class Worker extends Thread
+  {
+    public void run()
+    {
+      try
+      {
+        synchronized(obj)
+        {
+          System.out.println(``antes de wait``);
+          obj.wait();
+          System.out.println(``después de wait``);
+        }
+      }
+      catch(Exception e)
+      {
+        e.printStackTrace();
+      }
+    }
+  }
+  public static void main(String[] args) throws Exception
+  {
+    Worker w = new Worker();
+    w.start();
+    Thread.sleep(1000);
+    synchronized(obj)
+    {
+      System.out.println(``antes de notify``);
+      obj.notify();
+      System.out.println(``después de notify``);
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Cliente-servidor con sockets seguros}
+
+Para que un cliente y un servidor se comuniquen mediante sockets seguros, se requiere un certificado digital.
+
+Para propósitos de prueba, vamos a crear un certificado autofirmado utilizando el programa keytool incluido en el JDK.
+
+En Java los certificados y las llaves privadas correspondientes se almacenan en un archivo llamado ``keystore`` o repositorio de certificados.
+
+Para crear el repositorio de certificados \texttt{keystore\_servidor.jks}, ejecutar:
+
+\begin{SourceCode}
+keytool -genkeypair -keyalg RSA -alias certificado_servidor -keystore keystore_servidor.jks -storepass 1234567
+\end{SourceCode}
+
+La opción genkeypair genera un par de claves pública y privada.
+
+La clave pública se pone en un certificado autofirmado con un solo elemento en la ruta de certificación. El alias, en este caso ``certificado\_servidor``, define un nombre con el cual vamos a identificar el certificado. Keystore es un archivo (repositorio) donde se va a almacenar el certificado y la clave privada correspondiente. Keyalg es el algoritmo a utilizar para generar el par de claves, en este caso RSA. storepass es la contraseña para el keystore.
+
+Entonces se deberán capturar los datos del certificado. Ejemplo:
+
+\begin{SourceCode}
+¿Cuáles son su nombre y su apellido?
+  [Unknown]:  nombre
+¿Cuál es el nombre de su unidad de organización?
+  [Unknown]:  unidad
+¿Cuál es el nombre de su organización?
+  [Unknown]:  organizacion
+¿Cuál es el nombre de su ciudad o localidad?
+  [Unknown]:  CDMX
+¿Cuál es el nombre de su estado o provincia?
+  [Unknown]:  CDMX
+¿Cuál es el código de país de dos letras de la unidad?
+  [Unknown]:  MX
+¿Es correcto CN=nombre, OU=unidad, O=organizacion, L=CDMX, ST=CDMX, C=MX?
+  [no]:  si
+
+Introduzca la contraseña de clave para <certificado_servidor>
+
+(INTRO si es la misma contraseña que la del almacén de claves):
+\end{SourceCode}
+
+> \textbf{Importante:} Para Java, la clave del certificado \texttt{\&lt;certificado\_servidor\&gt;} y la clave (\texttt{storepass}) del almacén (\texttt{keystore}) deben ser iguales. En este caso: \texttt{1234567}.
+
+> \textbf{Nota:} En un certificado firmado por una CA, el campo \texttt{CN} (nombre común) contiene el nombre del dominio que ampara el certificado digital. Cuando un navegador web se conecta a un servidor web, compara el campo \texttt{CN} con el dominio indicado en la URL. Si no coinciden, despliega una advertencia.
+
+Debido a que el keystore ``keystore\_servidor.jks`` contiene la llave privada del servidor, es conveniente crear un keystore para el cliente, el cual contenga solamente el certificado del servidor, para esto vamos a exportar el certificado ``certificado\_servidor`` contenido en el keystore:
+
+\begin{SourceCode}
+keytool -exportcert -keystore keystore_servidor.jks -alias certificado_servidor -rfc -file certificado_servidor.pem
+\end{SourceCode}
+
+La opción exportcert lee del keystore el certificado identificado por el alias y genera un archivo texto que contiene el certificado, en este caso se genera el archivo certificado\_servidor.pem
+
+Entonces vamos a crear un keystore que utilizará el cliente (repositorio de confianza), este keystore deberá contener el certificado del servidor:
+
+\begin{SourceCode}
+keytool -import -alias certificado_servidor -file certificado_servidor.pem -keystore keystore_cliente.jks -storepass 123456
+\end{SourceCode}
+
+La opción import lee el archivo certificado\_servidor.pem e inserta el certificado en el keytore keystore\_cliente.jks, identificando el certificado mediante el alias. Storepass es la contraseña del keystore.
+
+En la siguiente figura podemos ver que el servidor utilizará el keystore que contiene el certificado del servidor y la clave privada respectiva. El cliente utilizará el keystore que solo contiene el certificado del servidor.
+
+Por otra parte, también es posible que los programas cliente y servidor utilicen un certificado firmado por una CA, en este caso será necesario que el keystore que utilizará el servidor contenga: 1) los certificados intermedios, 2) el certificado del servidor y 3) la clave privada correspondiente.
+
+Debido a que el certificado del servidor es un certificado de confianza emitido por una CA, no es necesario crear el repositorio keystore\_cliente.jks. Más adelante en el curso veremos el proceso de adquisición de un certificado digital para un dominio y cómo crear el keystore del servidor.
+
+Ahora veremos cómo crear un cliente y un servidor los cuales se comunicarán mediante sockets seguros.
+
+\section{\texttt{ClienteSSL.java}}
+
+Primeramente asignamos a la propiedad ``javax.net.ssl.trustStore`` el nombre del keystore del cliente, y a la propiedad ``javax.net.ssl.trustStorePassword`` la contraseña del keystore del cliente:
+
+\begin{SourceCode}
+System.setProperty(``javax.net.ssl.trustStore``, ``keystore_cliente.jks``);
+System.setProperty(``javax.net.ssl.trustStorePassword``,``123456``);
+\end{SourceCode}
+
+Nota. El método System.setProperty(String nombre\_propiedad,String valor\_propiedad) permite asignar un valor a una propiedad (variable) del sistema (Java). Debido a que las propiedades son ``globales``, es posible recuperar el valor de una propiedad del sistema desde cualquier parte del código, utilizando el método System.getProperty(String nombre\_propiedad).
+
+Ahora el cliente debe crear una instancia de la clase SSLSocketFactory:
+
+\begin{SourceCode}
+SSLSocketFactory cliente = (SSLSocketFactory) SSLSocketFactory.getDefault();
+\end{SourceCode}
+
+Entonces vamos a crear un socket que se conectará al servidor invocando el método createSocket de la clase SSLSocketFactory. En este caso el servidor se llama ``localhost`` (computadora local) y el puerto abierto en el servidor es el 50000.
+
+\begin{SourceCode}
+Socket conexion = cliente.createSocket(``localhost``, 50000);
+\end{SourceCode}
+
+Abrimos los streams de salida y de entrada como lo hicimos anteriormente.
+
+\begin{SourceCode}
+DataOutputStream salida = new DataOutputStream(conexion.getOutputStream());
+DataInputStream entrada = new DataInputStream(conexion.getInputStream());
+\end{SourceCode}
+
+Ahora podemos enviar datos al servidor, por ejemplo vamos a enviar un double:
+
+\begin{SourceCode}
+salida.writeDouble(123456789.123456789);
+\end{SourceCode}
+
+Para terminar el programa cerramos la conexión con el servidor (al cerrar el socket se cierran también los streams asociados), en este caso vamos a poner un retardo de un segundo antes de cerrar la conexión, para permitir que el servidor tenga tiempo de recibir los datos:
+
+\begin{SourceCode}
+Thread.sleep(1000);
+conexion.close();
+\end{SourceCode}
+
+\section{\texttt{ServidorSSL.java}}
+
+Al igual que el cliente, el servidor requiere el nombre del keystore y la contraseña, entonces asignamos a la propiedad ``javax.net.ssl.keystore`` el nombre del keystore del servidor, y a la propiedad ``javax.net.ssl.keystorePassword`` la contraseña del keystore del servidor:
+
+\begin{SourceCode}
+System.setProperty(``javax.net.ssl.keyStore``, ``keystore_servidor.jks``);
+System.setProperty(``javax.net.ssl.keyStorePassword``,``1234567``);
+\end{SourceCode}
+
+El servidor debe crear una instancia de la clase SSLServerSocketFactory:
+
+\begin{SourceCode}
+SSLServerSocketFactory socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+\end{SourceCode}
+
+Vamos a crear un socket servidor que va a abrir, en este caso, el puerto 50000 utilizando el método createServerSocket de la clase SSLServerSocketFactory:
+
+\begin{SourceCode}
+ServerSocket socket_servidor = socket_factory.createServerSocket(50000);
+\end{SourceCode}
+
+Ahora invocamos el método accept de la clase ServerSocket. Cuando se recibe la conexión el método accept regresa un socket:
+
+\begin{SourceCode}
+Socket conexion = socket_servidor.accept();
+\end{SourceCode}
+
+Abrimos los streams de salida y de entrada:
+
+\begin{SourceCode}
+DataOutputStream salida = new DataOutputStream(conexion.getOutputStream());
+DataInputStream entrada = new DataInputStream(conexion.getInputStream());
+\end{SourceCode}
+
+Ahora podemos recibir datos del cliente, en este caso vamos a recibir un double:
+
+\begin{SourceCode}
+double x = entrada.readDouble();
+System.out.println(x);
+\end{SourceCode}
+
+Finalmente, cerramos la conexión:
+
+\begin{SourceCode}
+conexion.close();
+\end{SourceCode}
+
+> \textbf{Nota:} Si el certificado del servidor fue emitido por una CA, no es necesario crear el repositorio \texttt{keystore\_cliente.jks}. Por tanto, \texttt{ClienteSSL.java} no requiere inicializar las propiedades \texttt{javax.net.ssl.trustStore} y \texttt{javax.net.ssl.trustStorePassword}.
+
+\section{Implementación de un servidor HTTPS}
+
+Un servidor HTTPS es un servidor HTTP con sockets seguros, por lo tanto es muy sencillo convertir nuestro servidor HTTP en un servidor HTTPS.
+
+Como vimos anteriormente, para establecer una comunicación segura entre un cliente y un servidor es necesario contar con un certificado digital, el cual puede ser un certificado autofirmado o bien, un certificado firmado por una autoridad certificadora (CA).
+
+En el ejemplo que sigue utilizaremos el mismo repositorio que creamos anteriormente (keystore\_servidor.jks), el cual contiene la llave privada y el certificado digital del servidor.
+
+Debido a que el certificado autofirmado no es reconocido por el navegador como un certificado válido, al acceder a nuestro servidor HTTPS el navegador desplegará un mensaje de advertencia, indicando que el certificado no es de confianza porque está autofirmado.
+
+Para propósito de pruebas, se puede dar clic al botón ``Avanzado`` y continuar, toda vez que el certificado lo hemos firmado nosotros. Cabe aclarar que en general no se debe acceder a una página web si el navegador despliega un mensaje de advertencia.
+
+\subsection{\texttt{ServidorHTTPS.java}}
+
+El único cambio que haremos en el código del servidor HTTP, es agregar las instrucciones necesarias para crear el socket servidor seguro:
+
+\begin{SourceCode}
+public static void main(String[] args) throws Exception
+{
+    System.setProperty(``javax.net.ssl.keyStore``,``keystore_servidor.jks``);
+    System.setProperty(``javax.net.ssl.keyStorePassword``,``1234567``);
+    SSLServerSocketFactory socket_factory = (SSLServerSocketFactory)
+                                            SSLServerSocketFactory.getDefault();
+    ServerSocket servidor = socket_factory.createServerSocket(443);
+    for(;;)
+    {
+      Socket conexion = servidor.accept();
+      new Worker(conexion).start();
+    }
+}
+\end{SourceCode}
+
+El puerto que escucha el servidor es el 443 el cual es el estándar para HTTPS, sin embargo, es recomendable que el servidor utilice un puerto mayor a 1024 ya que los puertos menores o iguales a 1024 solo pueden ser abiertos por procesos que ejecutan con permisos de administración (sudo).
+
+En general, es recomendable que un servidor (Apache, Tomcat, Weblogic, MySQL, Oracle, etc.) abra un puerto mayor que 1024 y se ejecute con permisos no administrativos, de lo contrario, se corre el riesgo de que un atacante tome el control del servidor y con ello pueda acceder a recursos del sistema.
+
+Para probar el acceso a nuestro servidor HTTPS solo tenemos que ingresar la siguiente URL en un navegador:
+
+\begin{SourceCode}
+https://localhost
+\end{SourceCode}
+
+Más adelante veremos cómo adquirir un certificado firmado por una autoridad certificadora y cómo crear un repositorio (keystore) con este certificado, de manera que cualquier navegador pueda conectarse a nuestro servidor HTTPS sin ningún problema de seguridad.
+
+\chapter{El tiempo en los sistemas distribuidos}
+
+El tiempo es una referencia que utilizan los sistemas distribuidos en varias situaciones.
+
+Supongamos una plataforma de comercio electrónico que funciona a nivel global. En cada país se tiene un servidor con una base de datos donde se registran las compras, incluyendo la fecha y hora en la que se realiza cada compra.
+
+Para consolidar las compras a nivel mundial cada servidor debe enviar los datos a un servidor central.
+
+Sin embargo, no es posible ordenar las compras por fecha debido a dos situaciones:
+
+\begin{itemize}
+
+\item Cada compra se ha registrado con la fecha y hora local.
+
+\item No es posible garantizar que los relojes de los servidores funcionen a la misma velocidad.
+
+\end{itemize}
+
+Para ilustrar este problema supongamos que un cliente en México realiza una compra a las 8 PM, y un cliente en España realiza una compra a las 2 AM del día siguiente. ¿Quién compró primero?
+
+Aparentemente el cliente en México realizó la compra antes que el cliente en España, debido a que la fecha de la compra del cliente en México es un día anterior a la fecha de la compra del cliente en España.
+
+Sin embargo, en realidad el cliente en España realizó la compra una hora antes que el cliente en México, debido a que la diferencia horaria entre México y España es de 7 horas.
+
+> \emph{Mapa de los husos horarios oficiales vigentes (dominio público).} 
+
+La solución a este problema es registrar en las bases de datos la fecha y hora global en un solo campo de tipo Datetime o Timestamp, en lugar de la fecha y hora local. Además, los servidores deberán sincronizar sus relojes internos a una misma hora (mediante NTP).
+
+Como se dijo anteriormente, el tiempo es una referencia para establecer un orden en una secuencia de eventos (como serían las compras en una plataforma de comercio electrónico).
+
+Por otra parte, si los servidores no requieren consolidar las compras, tampoco será necesario que exista un acuerdo en los tiempos que marcan sus relojes.
+
+El ejemplo anterior ilustra una regla muy importante de los sistemas distribuidos, la cual podemos enunciar de la siguiente manera: si dos computadoras no están conectadas, entonces no requieren sincronizar sus tiempos.
+
+\section{Sincronización de relojes}
+
+Sincronizar dos o más relojes significa que los servidores se ponen de acuerdo en una misma hora.
+
+Notar que un grupo de servidores pueden ponerse de acuerdo en una hora y otro grupo de servidores puede ponerse de acuerdo en otra hora; solo si ambos grupos de servidores se conectan, entonces ambos grupos de servidores deberán acordar una hora.
+
+Actualmente la mayoría de las computadoras y dispositivos móviles se encuentran conectados a Internet, por tanto, la mayoría de los relojes están sincronizados mediante un servidor de tiempo.
+
+\section{Segundos solares}
+
+El concepto de tiempo que utilizamos en la práctica se basa en la percepción que tenemos del día.
+
+Un día es un período de luz y obscuridad debido a la rotación de la tierra sobre su eje.
+
+Dividimos convencionalmente el día en 24 horas, cada hora en 60 minutos y cada minuto en 60 segundos.
+
+Por tanto, la tierra tarda 86,400 segundos en dar una vuelta sobre su eje, en términos de velocidad angular estamos hablando de 360/86400=0.00416 grados/segundo.
+
+A la fracción 1/86400 de día le llamamos segundo solar.
+
+Sin embargo la velocidad angular de la tierra no es constante, debido a que la rotación de la tierra se está deteniendo lentamente.
+
+\section{Segundos atómicos}
+
+Una forma más precisa de medir el tiempo es utilizar un reloj atómico de Cesio 133.
+
+En un reloj atómico se aplica microondas con diferentes frecuencias a átomos de Cesio 133, entonces los electrones del átomo de Cesio 133 absorben energía y cambian de estado; posteriormente los átomos regresan a su estado basal emitiendo fotones.
+
+A la frecuencia que produce más cambios de estado en los electrones del átomo de Cesio 133 se le llama frecuencia natural de resonancia.
+
+La frecuencia natural de resonancia del Cesio 133 es de 9,192,631,770 ciclos/segundo, es decir, el átomo de Cesio 133 muestra un máximo de absorción de energía cuando se le aplica microondas con una frecuencia de 9,192,631,770 Hertzios.
+
+Entonces se define el segundo atómico como el recíproco de la frecuencia natural de resonancia del Cesio 133 (recordar que el periodo de una onda es el recíproco de su frecuencia).
+
+Los relojes atómicos de Cesio 133 son extremadamente precisos, ya que independientemente de las condiciones ambientales (temperatura, presión, etc.), se adelantan o atrasan un segundo cada 300 millones de años.
+
+Los relojes atómicos son tan precisos que se han utilizado para probar los postulados de la teoría general de la relatividad, la cual predice la dilatación del tiempo debidos a la distorsión que causa la gravedad al espacio-tiempo.
+
+Utilizando relojes atómicos de Cesio 133 se ha demostrado que el tiempo no transcurre a la misma velocidad a diferentes altitudes, ya que al nivel del mar, donde la gravedad es mayor, el tiempo se dilata (transcurre más lentamente) con respecto al tiempo medido en una montaña elevada donde la gravedad es menor.
+
+Por ejemplo, un reloj atómico en un satélite GPS (a unos 20,000 Km de altura), se adelanta 7 microsegundos al día con respecto a un reloj atómico en la superficie de la tierra.
+
+A este fenómeno se le conoce como dilatación gravitacional del tiempo.
+
+\section{Tiempo atómico internacional (TAI)}
+
+Se define el tiempo atómico internacional (TAI) como el promedio de los segundos atómicos transcurridos desde el 1 de enero de 1958, dicho promedio obtenido de casi 70 relojes de Cesio 133 al rededor del mundo.
+
+\section{Tiempo universal coordinado (UTC)}
+
+El tiempo universal coordinado UTC (Coordinated Universal Time) es el estándar de tiempo que regula actualmente el tiempo de los relojes a nivel internacional.
+
+El tiempo UTC ha reemplazado el tiempo medio de Greenwich GMT.
+
+El tiempo GMT toma como referencia la posición del sol a medio día. Tanto el tiempo GMT como el tiempo UTC consideran el día solar compuesto por 86,400 segundos solares.
+
+Debido a que nuestro planeta disminuye su velocidad angular lentamente, el segundo solar dura más que el segundo atómico.
+
+Para sincronizar los segundos UTC con los segundos TAI, el tiempo UTC se debe “adelantar” para alcanzar el tiempo TAI, para esto “se salta” un segundo UTC una vez al año; se dice entonces que se introducen segundos vacíos en el tiempo UTC.
+
+Por ejemplo, en el siguiente diagrama se muestra cómo los segundos solares son más largos que los segundos atómicos, en esta caso para sincronizar los segundos solares (UTC) con los segundos atómicos (TAI), se salta del segundo 6 al 8, es decir, el segundo ``vacío`` es el segundo 7:
+
+La autoridad responsable de introducir los segundos vacíos es el International Earth Rotation and Reference Systems Service (IERS).
+
+Los proveedores de nube han adoptado el uso del tiempo UTC para los relojes en las máquinas virtuales, por ejemplo, cuando se ejecuta el comando date en una máquina virtual con Ubuntu en Azure, se obtiene la fecha y hora UTC.
+
+El tiempo UTC es mantenido por el International Bureau of Weights and Measures (BIPM).
+
+\section{Network Time Protocol (NTP)}
+
+El protocolo de tiempo de red (Network Time Protocol - NTP) define un procedimiento centralizado para la sincronización de relojes.
+
+En este procedimiento los clientes consultan un servidor de tiempo, el cual proporciona el tiempo UTC ajustado al tiempo TAI (mediante la introducción de segundos vacíos).
+
+En el protocolo NTP el servidor A se conecta al servidor de tiempo B, entonces el servidor B responde con los tiempos T2 y T3.
+
+T2 es el tiempo en que el servidor B recibe la conexión del servidor A y T3 es el tiempo en que el servidor B envía la respuesta al servidor A.
+
+T1 es el tiempo en que el servidor A se conecta al servidor B y T4 es el tiempo en que el servidor A recibe la respuesta del servidor B.
+
+Cuando el servidor A recibe la respuesta del servidor B, calcula el tiempo de respuesta Tres suponiendo que el tiempo que tarda el requerimiento Treq es igual al tiempo de respuesta Tres.
+
+\begin{SourceCode}
+T4 - T1 = Treq + Tres + (T3 - T2) = 2 Tres + (T3 - T2)
+\end{SourceCode}
+
+Despejando Tres el servidor A puede establecer su tiempo en T3+Tres, es decir, el tiempo que envió el servidor B más el tiempo que tarda en llegar la respuesta.
+
+Debido a que el servidor de tiempo puede saturarse al recibir muchas peticiones,  se suele implementar el mismo procedimiento sobre una topología de árbol.
+
+Los servidores de los estratos superiores del árbol son más exactos que los servidores de estratos inferiores, debido a que la diferencia entre treq y tres es menor.
+
+\section{Instalación de NTP en Ubuntu}
+
+Para asegurar que un servidor Ubuntu mantiene su reloj sincronizado con el tiempo UTC, podemos instalar NTP en el servidor ejecutando los siguientes comandos:
+
+\begin{SourceCode}
+sudo apt-get update
+sudo apt-get install ntp
+\end{SourceCode}
+
+\section{Conclusiones}
+
+\begin{enumerate}
+
+\item En una empresa, es muy importante que se configure el tiempo UTC en todas las computadoras de back-end, incluso aquellas que ejecutan sistemas locales.
+
+\end{enumerate}
+
+Las máquinas virtuales que ejecutan en la nube utilizan el tiempo UTC, por esta razón, es recomendable que los servidores de la empresa también utilicen el tiempo UTC, de manera que no sea necesario modificar las aplicaciones cuando la empresa migre a la nube.
+
+\begin{enumerate}
+
+\item No se debe utilizar el tipo de dato Date (fecha) en la base de datos, es recomendable utilizar el tipo de dato Datetime (fecha-hora).
+
+\item Un sistema no debe registrar la fecha-hora local en la base de datos; el sistema deberá registrar la fecha-hora UTC, de manera que el sistema esté preparado para migrar a la nube.
+
+\item El front-end del sistema debe mostrar al usuario la fecha-hora local, mientras que el back-end debe guardar la fecha-hora UTC. El front-end deberá realizar la conversión hora-local a hora UTC y viceversa, es decir, el front-end enviará la fecha-hora UTC al back-end, así mismo, el back-end enviará al front-end la fecha-hora UTC.
+
+\item Es necesario instalar NTP en los servidores para mantener sincronizados sus relojes.
+
+\end{enumerate}
+
+\chapter{Túnel SSH}
+
+El túnel SSH es un mecanismo que utiliza el comando SSH para implementar un canal encriptado, esto es, usando SSH es posible ejecutar un cliente el cual se comunicará con un servidor remoto (application server) utilizando el túnel SSH.
+
+El sistema SSH consiste en un cliente y un servidor.
+
+Para abrir una terminal con conexión segura ejecutamos el comando ``ssh`` el cual se conecta al servidor SSH.
+
+En general, las distribuciones físicas de Linux no tienen instalado el servidor SSH, por tanto, es necesario instalarlo.
+
+Por otra parte, las máquinas virtuales en la nube tienen instalado el servidor SSH, lo que permite al usuario conectarse a la máquina virtual utilizando el comando ``ssh``.
+
+El túnel SSH opera en la capa 5 del modelo OSI (capa de sesión) y en la capa 6 (capa de presentación). El túnel SSH utiliza la capa de sesión para establecer, mantener y finalizar la sesión entre el cliente y el servidor, y la capa de presentación para encriptar el tráfico entre el cliente y el servidor.
+
+Cuando habilitamos el túnel SSH para comunicar el cliente con el servidor, el cliente se conecta localmente al cliente SSH (el cliente SSH hace las veces de servidor); entonces el cliente SSH envía los datos al servidor SSH, el cual a su vez redirige los datos al servidor (el servidor SSH hace las veces de cliente del servidor).
+
+Debido a que el túnel SSH permite mapear los puertos, el cliente se puede conectar al cliente SSH a través de un puerto diferente, al puerto que utiliza el servidor SSH para conectarse al servidor.
+
+El mapeo de puertos es de utilidad cuando el puerto que utiliza el servidor está ocupado.
+
+En el siguiente diagrama podemos ver que el cliente se conecta a un servidor proxy en el cliente SSH, a través del puerto 3049, mientras que un cliente proxy en el servidor SSH, se conecta al servidor a través del puerto 2049:
+
+Podemos notar que los programas cliente SSH y servidor SSH funcionan como proxys transparentes, cuando se utilizan para implementar un túnel SSH.
+
+\section{Implementación de un túnel SSH}
+
+Ahora vamos a crear una VPN cliente-servidor entre los programas Cliente.java y Servidor2.java utilizando un túnel SSH en modo local forwarding.
+
+\begin{enumerate}
+
+\item Crear una máquina virtual en Azure con Ubuntu 24.
+
+\item Acceder a la máquina virtual utilizando SSH.
+
+\item Instalar el JDK en la máquina virtual.
+
+\item Enviar el programa ServidorHTTP.java a la máquina virtual.
+
+\item Compilar y ejecutar en la máquina virtual el programa \texttt{ServidorHTTP.java}:
+
+\end{enumerate}
+
+\begin{SourceCode}
+javac ServidorHTTP.java
+java ServidorHTTP
+\end{SourceCode}
+
+\begin{enumerate}
+
+\item En la computadora local (cliente) subir el túnel SSH:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh -N -f -L 80:localhost:8080 usuario@<ip-máquina-virtual>
+\end{SourceCode}
+
+Dónde:
+
+\begin{itemize}
+
+\item \texttt{-N}: no se ejecutará un comando remoto; solo se creará el túnel SSH.
+
+\item \texttt{-f}: \texttt{ssh} se ejecutará en segundo plano (\emph{background}).
+
+\item \texttt{-L 80:localhost:8080}: el navegador se conecta al cliente SSH por el puerto 80. El destino \texttt{localhost:8080} indica que el servidor SSH se conecta al servidor HTTP por el puerto 8080. El túnel mapea el puerto 80 al puerto 8080.
+
+\item \texttt{usuario}: nombre del usuario en la computadora remota.
+
+\item \texttt{\&lt;ip-máquina-virtual\&gt;}: dirección IP de la computadora remota.
+
+\end{itemize}
+
+En Linux, ejecutando el siguiente comando, se puede ver que el túnel queda ejecutando en segundo plano:
+
+\begin{SourceCode}
+ps -ef | grep ssh
+\end{SourceCode}
+
+\begin{enumerate}
+
+\item En la computadora local (cliente), ingresar en el navegador:
+
+\end{enumerate}
+
+\begin{SourceCode}
+http://localhost
+\end{SourceCode}
+
+En este caso suponemos que el navegador (cliente) se conecta al puerto local 80 de localhost, y el programa ServidorHTTP.java escucha el puerto 8080 (podemos ver que SSH mapea el puerto local 80 al puerto remoto 8080).
+
+También se puede ejecutar el programa ServidorHTTP.java como comando remoto, desde la computadora local (cliente) de la siguiente manera:
+
+\begin{SourceCode}
+ssh -L 80:localhost:8080 usuario@<ip-máquina-virtual> java ServidorHTTP
+\end{SourceCode}
+
+Notar que en este caso no se utilizaron las opciones -N y -f.
+
+\section{Autenticación mediante clave pública y clave privada}
+
+Cuando se ejecuta el comando SSH, la autenticación por omisión es mediante usuario y contraseña. Sin embargo, si queremos que el túnel SSH suba automáticamente en un script, será necesario implementar la autenticación mediante clave pública y clave privada.
+
+\subsection{Creación de la clave pública y la clave privada}
+
+\begin{enumerate}
+
+\item Acceder a la computadora cliente utilizando SSH.
+
+\item Para crear el par de claves, ejecutar el siguiente comando en la computadora local (cliente), la opción -t indica el algoritmo a utilizar y la opción -b el tamaño de la llave en bits:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh-keygen -t rsa -b 2048
+\end{SourceCode}
+
+Presionar la tecla Enter cuando se pregunta el nombre del archivo.
+
+Cuando se pregunta la contraseña presionar la tecla ``Enter`` si no se requiere la contraseña.
+
+La contraseña permite encriptar la clave privada en la computadora local (cliente). Si se define una contraseña ésta se deberá ingresar cada vez que se ejecute SSH.
+
+\begin{enumerate}
+
+\item Para copiar la clave pública a la máquina virtual donde ejecuta el servidor:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh-copy-id usuario@<ip-máquina-virtual>
+\end{SourceCode}
+
+Dónde ``usuario`` es el nombre del usuario en la máquina virtual donde ejecuta el servidor y <ip-máquina-virtual> es la dirección IP de la máquina virtual.
+
+\begin{enumerate}
+
+\item En la computadora local (cliente) probar el acceso a la máquina virtual, ahora la autenticación utilizará las claves pública y privada por tanto no se preguntará la contraseña:
+
+\end{enumerate}
+
+\begin{SourceCode}
+ssh usuario@<ip-máquina-virtual>
+\end{SourceCode}
+
+> \textbf{Nota:}
+
+Cuando se utiliza el par de llaves para la autenticación de SSH en Ubuntu, es recomendable incluir la opción -i (la cual indica la ruta de la llave privada) al crear el túnel.
+
+Si el túnel escucha un puerto menor a 1024 del lado del cliente, se deberá crear el túnel utilizando ``sudo``, lo que crea una sesión diferente a la sesión del usuario propietario del par de llaves, por tanto, ``ssh`` no encuentra la llave privada y entonces pregunta la contraseña.
+
+Por ejemplo, supongamos que el túnel escucha el puerto 80 del lado del cliente, y el usuario se llama ``ubuntu``, entonces agregamos la opción -i al crear el túnel:
+
+\begin{SourceCode}
+sudo ssh -i /home/ubuntu/.ssh/id_rsa -N -f -L 80:localhost:8080 ubuntu@<ip-máquina-virtual>
+\end{SourceCode}
+
+Por otra parte, cuando se utiliza el par de llaves para la autenticación de SSH en Windows, no es necesario utilizar la opción \texttt{-i}, ya que en Windows no es necesario ejecutar SSH con permisos de administrador.
+
+\chapter{Código fuente: Proxy.java}
+\begin{SourceCode}
+/*
+  Proxy.java
+  Carlos Pineda G. 2024
+*/
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.ServerSocket;
+class Proxy
+{
+  static String host_remoto;
+  static int puerto_remoto;
+  static int puerto_local;
+  static class Worker_1 extends Thread
+  {
+    Socket cliente_1,cliente_2;
+    Worker_1(Socket cliente_1)
+    {
+      this.cliente_1 = cliente_1;
+    }
+    public void run()
+    {
+      try
+      {
+        // se conecta al host remoto
+        cliente_2 = new Socket(host_remoto,puerto_remoto);
+        // thread que dirige el tráfico del host remoto al cliente
+        new Worker_2(cliente_1,cliente_2).start();
+        InputStream entrada_1 = cliente_1.getInputStream();
+        OutputStream salida_2 = cliente_2.getOutputStream();
+        byte[] buffer = new byte[1024];
+        int n;
+        while((n = entrada_1.read(buffer)) != -1)
+        {
+          salida_2.write(buffer,0,n);
+          salida_2.flush();
+        }
+      }
+      catch (IOException e)
+      {
+        // captura silenciosamente las excepciones por desconexión
+      }
+      finally
+      {
+        try
+        {
+          if (cliente_1 != null) cliente_1.close();
+          if (cliente_2 != null) cliente_2.close();
+        }
+        catch (IOException e2)
+        {
+          e2.printStackTrace();
+        }
+      }
+    }
+  }
+  static class Worker_2 extends Thread
+  {
+    Socket cliente_1,cliente_2;
+    Worker_2(Socket cliente_1,Socket cliente_2)
+    {
+      this.cliente_1 = cliente_1;
+      this.cliente_2 = cliente_2;
+    }
+    public void run()
+    {
+      try
+      {
+        InputStream entrada_2 = cliente_2.getInputStream();
+        OutputStream salida_1 = cliente_1.getOutputStream();
+        byte[] buffer = new byte[4096];
+        int n;
+        while((n = entrada_2.read(buffer)) != -1)
+        {
+          salida_1.write(buffer,0,n);
+          salida_1.flush();
+        } 
+      }
+      catch (IOException e)
+      {
+        // captura silenciosamente las excepciones por desconexión
+      }
+      finally
+      {
+        try
+        {
+          if (cliente_1 != null) cliente_1.close();
+          if (cliente_2 != null) cliente_2.close();
+        }
+        catch (IOException e2)
+        {
+          e2.printStackTrace();
+        }
+      }
+    }
+  }
+  public static void main(String[] args) throws Exception
+  {
+    if (args.length != 3)
+    { 
+      System.err.println(``Uso:\njava Proxy <host-remoto> <puerto-remoto> <puerto-local>``);
+      System.exit(1);
+    }
+    host_remoto = args[0];
+    puerto_remoto = Integer.parseInt(args[1]);
+    puerto_local = Integer.parseInt(args[2]);
+    System.out.println(``host_remoto: `` + host_remoto + ``, puerto_remoto: `` + puerto_remoto + ``, puerto_local: `` + puerto_local);
+    ServerSocket ss = new ServerSocket(puerto_local);
+    for(;;)
+    {
+      // espera una conexión del cliente
+      Socket cliente_1 = ss.accept();
+      // thread que dirige el tráfico del cliente al host remoto
+      new Worker_1(cliente_1).start();
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Código fuente: ServidorHTTP (variante).java}
+\begin{SourceCode}
+/*
+  ServidorHTTP.java
+  Carlos Pine3da G. 2026
+*/
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Date;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
+
+class ServidorHTTP
+{
+  static class Worker extends Thread
+  {
+    Socket conexion;
+
+    Worker(Socket conexion)
+    {
+      this.conexion = conexion;
+    }
+
+    int valor(String parametros, String variable) throws Exception
+    {
+      String[] p = parametros.split(``&``);
+      for (int i = 0; i < p.length; i++)
+      {
+        String[] s = p[i].split(``=``);
+        if (s[0].equals(variable))
+          return Integer.parseInt(s[1]);
+      }
+      throw new Exception(``Se espera la variable: `` + variable);
+    }
+
+    public void run()
+    {
+      try
+      {
+        BufferedReader entrada = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
+        PrintWriter salida = new PrintWriter(conexion.getOutputStream());
+        String fecha_if_modified_since = null;
+
+        String req = entrada.readLine();
+        System.out.println(``Petición: `` + req);
+
+        for (;;)
+        {
+          String encabezado = entrada.readLine();
+          System.out.println(``Encabezado: `` + encabezado);
+
+          // obtiene la fecha enviada en el encabezado If-Modified-Since
+          if (encabezado.startsWith(``If-Modified-Since: ``))
+	          fecha_if_modified_since = encabezado.substring(19);
+
+          if (encabezado.equals(````)) break;
+        }
+
+        if (req.startsWith(``GET /suma?``))
+        {
+          String parametros = req.split(`` ``)[1].split(``\\?``)[1];
+
+          String respuesta = String.valueOf(valor(parametros, ``a``) + valor(parametros, ``b``) + valor(parametros, ``c``));
+
+          salida.println(``HTTP/1.1 200 OK``);
+          salida.println(``Access-Control-Allow-Origin: *``);
+          salida.println(``Content-type: text/plain; charset=utf-8``);
+          salida.println(``Content-length: `` + respuesta.length());
+          salida.println(``Connection: close``);
+          salida.println();
+          salida.println(respuesta);
+          salida.flush();
+        }
+        else
+        if (req.startsWith(``GET /``))
+        {
+          String path = req.split(`` ``)[1].substring(1);
+
+          if (!path.equals(````) && Files.exists(Paths.get(path)))
+          {
+            byte[] buffer = Files.readAllBytes(Paths.get(path));
+
+            // obtiene la fecha de modificación del archivo
+            Instant instant = Files.getLastModifiedTime(Paths.get(path)).toInstant();
+            String fecha_last_modified = LocalDateTime.ofInstant(instant,ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(``yyyy-MM-dd HH:mm:ss``));
+
+            if (!fecha_last_modified.equals(fecha_if_modified_since))
+            {
+              salida.println(``HTTP/1.1 200 OK``);
+              salida.println(``Content-type: text/html; charset=utf-8``);
+              salida.println(``Content-length: `` + buffer.length);
+              salida.println(``Last-Modified: `` + fecha_last_modified);
+              salida.println(``Connection: close``);
+              salida.println();
+              salida.flush();
+	            conexion.getOutputStream().write(buffer);
+            }
+            else
+            {
+              salida.println(``HTTP/1.1 304 Not Modified``);
+              salida.flush();
+            }
+          }
+          else
+          {
+            String respuesta = ``<html><body><h1>404 File Not Found</h1></body></html>``;
+            salida.println(``HTTP/1.1 404 Not Found``);
+            salida.println(``Content-Type: text/html; charset=utf-8``);
+            salida.println(``Content-Length: `` + respuesta.length());
+            salida.println(``Connection: close``);
+            salida.println();
+            salida.println(respuesta);
+            salida.flush();
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        System.err.println(``Error en la conexión: `` + e.getMessage());
+      }
+      finally
+      {
+        try
+        {
+          conexion.close();
+        }
+        catch (Exception e)
+        {
+          System.err.println(``Error en close: `` + e.getMessage());
+        }
+      }
+    }
+  }
+
+  public static void main(String[] args) throws Exception
+  {
+    ServerSocket socket_servidor = new ServerSocket(80);
+
+    for (;;)
+    {
+      Socket conexion = socket_servidor.accept();
+      new Worker(conexion).start();
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Código fuente: ServidorHTTP.java}
+\begin{SourceCode}
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Date;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.file.Files;;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+
+class ServidorHTTP
+{
+  static class Worker extends Thread
+  {
+    Socket conexion;
+
+    Worker(Socket conexion)
+    {
+      this.conexion = conexion;
+    }
+
+    int valor(String parametros, String variable) throws Exception
+    {
+      String[] p = parametros.split(``&``);
+      for (int i = 0; i < p.length; i++)
+      {
+        String[] s = p[i].split(``=``);
+        if (s[0].equals(variable))
+          return Integer.parseInt(s[1]);
+      }
+      throw new Exception(``Se espera la variable: `` + variable);
+    }
+
+    public void run()
+    {
+      try
+      {
+        BufferedReader entrada = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
+        PrintWriter salida = new PrintWriter(conexion.getOutputStream());
+	      String fecha_if_modified_since = null;
+
+        String req = entrada.readLine();
+        System.out.println(``Petición: `` + req);
+
+        for (;;)
+        {
+          String encabezado = entrada.readLine();
+          System.out.println(``Encabezado: `` + encabezado);
+
+          if (encabezado.startsWith(``If-Modified-Since: ``))
+	          fecha_if_modified_since = encabezado.substring(19);
+
+          if (encabezado.equals(````)) break;
+        }
+
+        if (req.startsWith(``GET /suma?``))
+        {
+          String parametros = req.split(`` ``)[1].split(``\\?``)[1];
+
+          String respuesta = String.valueOf(
+            valor(parametros, ``a``) +
+            valor(parametros, ``b``) +
+            valor(parametros, ``c``)
+          );
+
+          salida.println(``HTTP/1.1 200 OK``);
+          salida.println(``Access-Control-Allow-Origin: *``);
+          salida.println(``Content-type: text/plain; charset=utf-8``);
+          salida.println(``Content-length: `` + respuesta.length());
+          salida.println(``Connection: close``);
+          salida.println();
+          salida.println(respuesta);
+          salida.flush();
+        }
+	      else if (req.startsWith(``GET /``))
+        {
+	        Path path = Paths.get(req.substring(5,req.length()-9));
+
+	        if (Files.exists(path))
+	        {
+	          byte[] buffer = Files.readAllBytes(path);
+
+	          Date fecha_modificacion = new Date(Files.getLastModifiedTime(path).toMillis());
+	          String fecha_last_modified = String.format(``%04d-%02d-%02d %02d:%02d:%02d``,
+						  fecha_modificacion.getYear()+1900,
+						  fecha_modificacion.getMonth()+1,
+						  fecha_modificacion.getDate(),
+						  fecha_modificacion.getHours(),
+						  fecha_modificacion.getMinutes(),
+						  fecha_modificacion.getSeconds());
+
+	          if (!fecha_last_modified.equals(fecha_if_modified_since))
+	          {
+              salida.println(``HTTP/1.1 200 OK``);
+              salida.println(``Content-type: text/html; charset=utf-8``);
+              salida.println(``Content-length: `` + buffer.length);
+              salida.println(``Last-Modified: `` + fecha_last_modified);
+              salida.println(``Connection: close``);
+              salida.println();
+              salida.flush();
+	            conexion.getOutputStream().write(buffer);
+	          }
+	          else
+	          {
+              salida.println(``HTTP/1.1 304 Not Modified``);
+              salida.flush();
+	          }
+	        }
+	        else
+	        {
+	          String respuesta = ``<html><body><h1>404 File Not Found</h1></body></html>``;
+	          salida.println(``HTTP/1.1 404 Not Found``);
+	          salida.println(``Content-Type: text/html; charset=utf-8``);
+	          salida.println(``Content-Length: `` + respuesta.length());
+	          salida.println(``Connection: close``);
+	          salida.println();
+	          salida.println(respuesta);
+	          salida.flush();
+	        }
+        }
+      }
+      catch (Exception e)
+      {
+        System.err.println(``Error en la conexión: `` + e.getMessage());
+      }
+      finally
+      {
+        try
+        {
+          conexion.close();
+        }
+        catch (Exception e)
+        {
+          System.err.println(``Error en close: `` + e.getMessage());
+        }
+      }
+    }
+  }
+
+  public static void main(String[] args) throws Exception
+  {
+    ServerSocket socket_servidor = new ServerSocket(80);
+
+    for (;;)
+    {
+      Socket conexion = socket_servidor.accept();
+      new Worker(conexion).start();
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Código fuente: ServidorHTTPS.java}
+\begin{SourceCode}
+/*
+  ServidorHTTPS.java
+  Carlos Pine3da G. 2026
+*/
+
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Date;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
+import javax.net.ssl.SSLServerSocketFactory;
+
+class ServidorHTTPS
+{
+  static class Worker extends Thread
+  {
+    Socket conexion;
+
+    Worker(Socket conexion)
+    {
+      this.conexion = conexion;
+    }
+
+    int valor(String parametros, String variable) throws Exception
+    {
+      String[] p = parametros.split(``&``);
+      for (int i = 0; i < p.length; i++)
+      {
+        String[] s = p[i].split(``=``);
+        if (s[0].equals(variable))
+          return Integer.parseInt(s[1]);
+      }
+      throw new Exception(``Se espera la variable: `` + variable);
+    }
+
+    public void run()
+    {
+      try
+      {
+        BufferedReader entrada = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
+        PrintWriter salida = new PrintWriter(conexion.getOutputStream());
+        String fecha_if_modified_since = null;
+
+        String req = entrada.readLine();
+        System.out.println(``Petición: `` + req);
+
+        for (;;)
+        {
+          String encabezado = entrada.readLine();
+          System.out.println(``Encabezado: `` + encabezado);
+
+          // obtiene la fecha enviada en el encabezado If-Modified-Since
+          if (encabezado.startsWith(``If-Modified-Since: ``))
+	          fecha_if_modified_since = encabezado.substring(19);
+
+          if (encabezado.equals(````)) break;
+        }
+
+        if (req.startsWith(``GET /suma?``))
+        {
+          String parametros = req.split(`` ``)[1].split(``\\?``)[1];
+
+          String respuesta = String.valueOf(valor(parametros, ``a``) + valor(parametros, ``b``) + valor(parametros, ``c``));
+
+          salida.println(``HTTP/1.1 200 OK``);
+          salida.println(``Access-Control-Allow-Origin: *``);
+          salida.println(``Content-type: text/plain; charset=utf-8``);
+          salida.println(``Content-length: `` + respuesta.length());
+          salida.println(``Connection: close``);
+          salida.println();
+          salida.println(respuesta);
+          salida.flush();
+        }
+        else
+        if (req.startsWith(``GET /``))
+        {
+          String path = req.split(`` ``)[1].substring(1);
+
+          if (!path.equals(````) && Files.exists(Paths.get(path)))
+          {
+            byte[] buffer = Files.readAllBytes(Paths.get(path));
+
+            // obtiene la fecha de modificación del archivo
+            Instant instant = Files.getLastModifiedTime(Paths.get(path)).toInstant();
+            String fecha_last_modified = LocalDateTime.ofInstant(instant,ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(``yyyy-MM-dd HH:mm:ss``));
+
+            if (!fecha_last_modified.equals(fecha_if_modified_since))
+            {
+              salida.println(``HTTP/1.1 200 OK``);
+              salida.println(``Content-type: text/html; charset=utf-8``);
+              salida.println(``Content-length: `` + buffer.length);
+              salida.println(``Last-Modified: `` + fecha_last_modified);
+              salida.println(``Connection: close``);
+              salida.println();
+              salida.flush();
+	            conexion.getOutputStream().write(buffer);
+            }
+            else
+            {
+              salida.println(``HTTP/1.1 304 Not Modified``);
+              salida.flush();
+            }
+          }
+          else
+          {
+            String respuesta = ``<html><body><h1>404 File Not Found</h1></body></html>``;
+            salida.println(``HTTP/1.1 404 Not Found``);
+            salida.println(``Content-Type: text/html; charset=utf-8``);
+            salida.println(``Content-Length: `` + respuesta.length());
+            salida.println(``Connection: close``);
+            salida.println();
+            salida.println(respuesta);
+            salida.flush();
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        System.err.println(``Error en la conexión: `` + e.getMessage());
+      }
+      finally
+      {
+        try
+        {
+          conexion.close();
+        }
+        catch (Exception e)
+        {
+          System.err.println(``Error en close: `` + e.getMessage());
+        }
+      }
+    }
+  }
+
+  public static void main(String[] args) throws Exception
+  {
+    System.setProperty(``javax.net.ssl.keyStore``,``keystore_servidor.jks``);
+    System.setProperty(``javax.net.ssl.keyStorePassword``,``1234567``);
+    SSLServerSocketFactory socket_factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+
+    ServerSocket socket_servidor = socket_factory.createServerSocket(443);
+
+    for (;;)
+    {
+      Socket conexion = socket_servidor.accept();
+      new Worker(conexion).start();
+    }
+  }
+}
+\end{SourceCode}
+
+\chapter{Código fuente: p.html}
+\begin{SourceCode}
+<html>
+  <script>
+    function get(req,callback)
+    {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', req, true);
+      xhr.onload=function()
+      {
+        if (callback != null) callback(xhr.status,xhr.response);
+      };
+      xhr.send();
+    }
+  </script>
+  <body>
+    <button onclick=``get('/suma?a=1&b=2&c=3',function(status,response){alert(status + ' ' + response);})``>Aceptar</button>
+  </body>
+</html>
+\end{SourceCode}
+
+\part{Unidad 2}
+
+\chapter{Cómputo en la nube}
+
+\section{Aprovisionamiento de recursos informáticos On-premise}
+
+En el pasado, el aprovisionamiento de recursos informáticos On-premise (en las instalaciones de la empresa) representaba el concurso de diferentes proveedores de bienes y servicios, como eran los representantes de ventas, ingenieros de preventa, fabricantes de los equipos, fabricante del sistema operativo, fabricante de la base de datos, agentes aduanales, transportistas, instaladores del site, proveedor de energía, proveedor de comunicaciones, instaladores del hardware, instaladores del software, entre otros.
+
+Entonces, el aprovisionamiento de recursos informáticos era un proceso complejo y tardado, el cual culminaba con el sistema en producción.
+
+Después había que reaprovisionar cuando crecían las necesidades de la empresa.
+
+\section{Cómputo como servicio}
+
+El concepto de cómputo en la nube (cloud computing) está basado en las ideas del profesor John McCarthy de la Universidad de Stanford.
+
+En un discurso en 1961, predijo que la tecnología de tiempo compartido (la posibilidad de que múltiples usuarios y procesos utilicen una misma computadora) podría llevar en el futuro, a ofrecer las capacidades de cómputo y las aplicaciones como servicios públicos.
+
+Esta idea se concretaría en lo que actualmente conocemos como cómputo en la nube, al ofrecer servicios virtualizados a nivel masivo en Internet.
+
+Por otra parte, en 1984 John Burdette Gage acuñó el slogan The network is the computer para Sun Microsystems, el cual significa que la computadora de escritorio es una ``ventana`` a la red, y mediante el software apropiado, es posible transferir tareas de cómputo a otras computadoras.
+
+A la posibilidad de trasferir tareas de cómputo a otras computadoras se le conoce como computation offloading.
+
+\section{Fábricas de información}
+
+En 2006 aparece el artículo ``The Information Factories`` en la prestigiosa revista WIRED [1].
+
+En este artículo se presenta la idea de ``fábricas de información`` (Information Factories).
+
+El autor, George Gilder, argumenta que la tecnología de la información evoluciona hacia un modelo de procesamiento y almacenamiento de datos centralizados en grandes centros de datos.
+
+Estos centros de datos estarían equipados con grandes servidores y redes de alta velocidad.
+
+Entonces, en lugar de depender de computadoras personales, los usuarios accederán a servicios informáticos a través de redes de comunicación utilizando dispositivos más simples, como serían las computadoras portátiles y los dispositivos móviles como tabletas y teléfonos celulares.
+
+> ``The desktop is dead. Welcome to the Internet cloud, where massive facilities across the globe will store all the data you'll ever use``, The Information Factories, George Gilder.
+
+Este modelo de informática centralizada permitiría contar con capacidades ``ilimitadas`` de procesamiento y almacenamiento, lo cual proporcionará niveles de escalabilidad sin precedentes.
+
+Si bien George Gilder no introduce el concepto de cómputo en la nube como tal, su artículo explora las implicaciones sociales y económicas de este modelo de computación basado en la idea de ``fábrica de información``.
+
+\section{Proveedores de servicios en la nube}
+
+\subsection{Amazon}
+
+En 2006 Amazon lanzó la plataforma Amazon Web Services (AWS) incluyendo los servicios Elastic Computer (EC2) y Storage Cloud (S3).
+
+AWS popularizó el modelo de Infraestructura como Servicio (IaaS, Infrastructure as a Service), el cual permite a las empresas alquilar recursos de cómputo y almacenamiento en lugar de invertir en hardware propio.
+
+\subsection{Google}
+
+En 2008 Google lanzó Google App Engine, inicialmente como una plataforma para desarrollar y alojar aplicaciones web.
+
+Posteriormente, Google lanza el servicio Google Cloud Storage en 2010 y en 2013 el servicio Google Compute Engine (GCE). Con estos servicios Google entra en el mercado de infraestructura como Servicio (IaaS).
+
+La marca Google Cloud Platform (GCP) se lanzó oficialmente en 2011.
+
+\subsection{Microsoft}
+
+En 2010 Microsoft lanzó la plataforma Windows Azure (ahora conocida como Microsoft Azure), con servicios para desarrolladores al nivel de plataforma (PaaS), entre otros:
+
+\begin{itemize}
+
+\item Windows Azure Compute para la ejecución de aplicaciones en la nube utilizando máquinas virtuales administradas por Microsoft.
+
+\item Windows Azure Storage para el almacenamiento de datos estructurados y no estructurados.
+
+\item Windows Azure SQL Database el cual es SQL Server en la nube.
+
+\end{itemize}
+
+En 2012 Microsoft lanzó los servicios:
+
+\begin{enumerate}
+
+\item Azure Virtual Machines, con el cual Microsoft entra en el mercado de IaaS.
+
+\item Azure Virtual Network el cual permite crear redes virtuales en la nube.
+
+\item Azure Storage IaaS el cual ofrece almacenamiento para las máquinas virtuales.
+
+\end{enumerate}
+
+En 2015 Microsoft lanza el servicio Azure Container Service el cual permite ejecutar contenedores Docker en Azure.
+
+\section{Definición de cómputo en la nube}
+
+El Instituto Nacional de Estándares y Tecnología (NIST) de Estados Unidos, define el cómputo en la nube de la siguiente manera [2]:
+
+> ``Cloud computing is a model for enabling ubiquitous, convenient, on-demand network access to a shared pool of configurable computing resources (e.g., networks, servers, storage, applications, and services) that can be rapidly provisioned and released with minimal management effort or service provider interaction.``
+
+\section{Las cinco características esenciales del cómputo en la nube}
+
+\subsection{1. Autoservicio bajo demanda}
+
+Los usuarios pueden unilateralmente aprovisionar automáticamente capacidades en la infraestructura del proveedor del servicio de nube, tales como tiempo de servidor, almacenamiento y red, de acuerdo a sus necesidades sin intervención humana.
+
+\subsection{2. Acceso amplio por medio de la red}
+
+Las capacidades que ofrece el proveedor de nube están disponibles a través de la red, y son accedidas mediante mecanismos estándares utilizando clientes heterogéneos como teléfonos celulares, tabletas, computadoras de escritorio, etc.
+
+\subsection{3. Recursos compartidos}
+
+Los recursos de cómputo del proveedor de nube son compartidos por múltiples usuarios usando un modelo “multiinquilino” (multitenant). Los recursos físicos y virtuales (procesamiento, almacenamiento, memoria, ancho de banda, etc.) son asignados y reasignados dinámicamente de acuerdo a las necesidades de los usuarios.
+
+Los recursos asignados son transparentes en términos de la ubicación, se manera que el usuario no tiene que saber qué recurso físico está utilizando. No obstante, el usuario puede determinar en qué región o datacenter creará los recursos virtuales.
+
+\subsection{4. Elasticidad}
+
+Las capacidades pueden ser aprovisionadas y des-aprovisionadas elásticamente (manualmente o automáticamente), permitiendo al usuario escalar hacia arriba o hacia abajo, horizontalmente o verticalmente, bajo demanda. La escalabilidad hacia arriba con frecuencia parece ser ilimitada.
+
+\subsection{5. Medición del servicio}
+
+Los recursos de nube pueden ser monitoreados con la finalidad de controlar y optimizar automáticamente su utilización. Este monitoreo se realiza a diferentes niveles de abstracción de acuerdo al tipo de servicio (almacenamiento, procesamiento, ancho de banda, cuentas de usuario, etc.).
+
+\section{Los tres modelos de servicio del cómputo en la nube}
+
+\subsection{1. Infraestructura como servicio}
+
+En el nivel de Infraestructura como servicio o Infrastructure as a Service (IaaS), el usuario puede aprovisionar procesamiento (máquinas virtuales), almacenamiento (discos virtuales), redes y otros servicios que le permiten ejecutar cualquier software.
+
+En este nivel el usuario tiene el control de sistema operativo, el almacenamiento, algunos componentes de la red, y las aplicaciones que ejecutan sobre el sistema operativo.
+
+\subsection{2. Plataforma como servicio}
+
+En el nivel de plataforma como servicio o Platform as a Service (PaaS), el usuario puede aprovisionar servicios de instancias de bases de datos, respaldos, ejecución de servicio web, plataformas de desarrollo y pruebas, y otros servicios sin la necesidad de aprovisionar o controlar la infraestructura subyacente (servicios de IaaS como serían la máquina virtual, la red o el almacenamiento).
+
+\subsection{3. Software como servicio}
+
+En el nivel de software como servicio o Software as a Service (SaaS), el usuario puede utilizar las aplicaciones publicadas por el proveedor de nube, las cuales ejecutan sobre la infraestructura de nube. El usuario no tiene que aprovisionar servicios de PaaS o de IaaS.
+
+Los servicios al nivel de SaaS se acceden mediante una aplicación cliente, p.e. un navegador (web browser). Los usuarios acceden a las aplicaciones de SaaS mediante un usuario y contraseña o mediante un par de claves.
+
+\section{Los cuatro modelos de despliegue del cómputo en la nube}
+
+\subsection{1. Nube privada}
+
+Los servicios de nube son aprovisionados para el uso exclusivo de una sola organización.
+
+La organización puede ser propietaria de la infraestructura, de un tercero o de una combinación de ambas.
+
+De igual forma, la administración y operación puede ser realizada por la misma organización, por un tercero o una combinación de ambas.
+
+En cuanto a la ubicación, la infraestructura puede estar on-premise (en las instalaciones de la organización), o bien, off-premise (fuera de las instalaciones de la organización).
+
+\subsection{2. Nube comunitaria}
+
+Los servicios de nube son aprovisionados para el uso de una comunidad de usuarios u organizaciones con objetivos compartidos (p.e. empresas, instituciones de gobierno, etc.).
+
+Al igual que la nube privada, la propiedad, administración y operación de la infraestructura puede ser de la comunidad, un tercero o una combinación de ambos.
+
+La infraestructura puede estar ubicada en instalaciones de la comunidad, un tercero o una combinación de ambas.
+
+\subsection{3. Nube pública}
+
+Los servicios de nube son aprovisionados para el público en general.
+
+La infraestructura está ubicada en las instalaciones del proveedor de los servicios de nube (Amazon, Microsoft, Google, etc.).
+
+\subsection{4. Nube híbrida}
+
+La infraestructura de nube es una composición de dos o más modelos de despliegue (nube privada, nube comunitaria, nube pública).
+
+La comunicación entre las redes de las diferentes nubes, se realiza mediante tecnologías propietarias o estándares que permitan implementar canales de comunicación seguros (como son las VPN).
+
+\chapter{Principios del cómputo en la nube}
+
+\section{Servicios virtuales a nivel masivo}
+
+El cómputo en la nube es un modelo de arquitectura basado en una infraestructura de cómputo ofrecida como servicios virtuales a nivel masivo.
+
+El concepto clave en el cómputo en la nube es el ``servicio``, así, se ofrece:
+
+\begin{itemize}
+
+\item IaaS (Infrastructure as a Service) Servicio de creación de infraestructura virtual y física.
+
+\item PaaS (Platform as a Service) Servicios de DBMS, plataformas de desarrollo y pruebas.
+
+\item SaaS (Software as a Service) Servicio de aplicaciones de software.
+
+\item Otros servicios con la terminación ``as a Service``:
+
+\item DaaS (Data as a Service) Servicio de acceso a datos.
+
+\item DRaaS (Disaster Recovery as a Service) Servicio de recuperación de máquinas virtuales ante desastres.
+
+\end{itemize}
+
+\section{Escalabilidad en la nube}
+
+La escalabilidad es la capacidad de un sistema en la nube de aumentar o disminuir los recursos aprovisionados (CPU virtuales y memoria de una máquina virtual, disco de sistema operativo, disco de datos.
+
+La escalabilidad vertical se refiere al crecimiento o descrecimiento de las capacidades de una computadora.
+
+La escalabilidad horizontal se refiere a la creación o eliminación de máquinas virtuales.
+
+\section{Disponibilidad en la nube}
+
+La disponibilidad es la capacidad de un sistema en la nube para estar accesible (disponible) en todo momento, de manera que los usuarios puedan acceder el sistema.
+
+La disponibilidad se mide en porcentaje que representa el tiempo durante el cual el sistema está disponible (tiempo de actividad o uptime).
+
+La disponibilidad es: \textbf{100 x el tiempo de actividad / tiempo total}.
+
+Por ejemplo, si el sistema está disponible 364 días de 365 días, entonces la disponibilidad es del 99.7260\%
+
+Los proveedores de nube establecen la disponibilidad de los servicios en un SLA (Service Level Agreement) o Acuerdo de nivel de servicio.
+
+\section{Confiabilidad en la nube}
+
+La confiabilidad es la capacidad de un sistema en la nube para funcionar durante largos períodos de tiempo sin interrupciones.
+
+Para garantizar la confiabilidad, los proveedores de nube implementan diversas estrategias, por ejemplo:
+
+\begin{itemize}
+
+\item \textbf{Geo-Redundant Storage.} La replicación de los respaldos en regiones a cientos de kilómetros de la región actual.
+
+\item \textbf{Zona de disponibilidad.} Uno o más datacenters equipados con su propia alimentación, refrigeración y red.
+
+\item \textbf{Dominios de error.} Las máquinas virtuales que pertenecen a un mismo dominio de error comparten la misma fuente de alimentación y red física.
+
+\item \textbf{Dominios de actualización.} Las máquinas virtuales dentro de un mismo dominio de actualización se reiniciarán simultáneamente durante el mantenimiento planeado. Solo se reiniciará un dominio de actualización a la vez.
+
+\item \textbf{Balanceo de carga.} Un balanceador de carga permite escalar un sistema, y al mismo tiempo evita puntos únicos de falla aumentando la disponibilidad.
+
+\item \textbf{Site Recovery.} Permite replicar y recuperar máquinas virtuales en caso de falla o desastre.
+
+\item \textbf{Respaldos.} Copia de seguridad de máquinas virtuales y archivos, permitiendo la recuperación de los datos en caso de ransomware, pérdida o corrupción de los datos
+
+\item \textbf{Alta disponibilidad en DBMS.} Crea una réplica de la base de datos en una zona de disponibilidad diferente.
+
+\end{itemize}
+
+\section{Transparencia}
+
+La transparencia es la capacidad de los usuarios para acceder los recursos de nube sin la necesidad de conocer los detalles de la infraestructura de nube.
+
+Podemos dividir la transparencia en siete categorías:
+
+\begin{itemize}
+
+\item \textbf{Transparencia en el acceso a los datos.} Los usuarios y aplicaciones acceden a los datos en la nube de manera estandarizada.
+
+\item \textbf{Transparencia de ubicación.} Los usuarios de nube acceden a los recursos independientemente de su localización física.
+
+\item \textbf{Transparencia de migración.} Los usuarios de nube no son afectados por la migración de los datos y de los procesos que pueda realizar la plataforma.
+
+\item \textbf{Transparencia de reubicación.} La transparencia de reubicación se refiere a la capacidad de la nube de cambiar la ubicación de un recurso mientras está en uso, sin que el usuario que accede el recurso se vea afectado.
+
+\item \textbf{Transparencia de replicación.} La transparencia de replicación es la capacidad de la nube de ocultar la existencia de recursos replicados.
+
+\item \textbf{Transparencia de concurrencia.} La transparencia de concurrencia se refiere a la capacidad de la nube de ocultar el hecho de que varios usuarios y procesos comparten los diferentes recursos de manera concurrente.
+
+\item \textbf{Transparencia ante fallas.} La transparencia ante fallas es la capacidad de la nube de ocultar una falla.
+
+\end{itemize}
+
+Por ejemplo, si un sistema que se encuentra totalmente replicado, cuando el sistema principal falla entonces el usuario accederá de manera transparente a la réplica del sistema.
+
+Más adelante en el curso veremos cómo replicar un sistema completo en la nube utilizando un administrador de tráfico de red y cómo implementar sistemas tolerantes a fallas en la nube mediante balance de carga.
+
+\section{Rendimiento}
+
+El rendimiento es la eficiencia con la que un sistema en la nube utiliza los recursos de nube, incluyendo la capacidad de procesamiento, almacenamiento, ancho de banda, entre otros recursos.
+
+\section{Desempeño}
+
+El desempeño se refiere a la velocidad con la ejecuta un sistema en la nube.
+
+El desempeño depende de las técnicas de programación y del rendimiento del sistema. El objetivo es mantener el sistema funcionando de manera consistente incluso bajo cargas de trabajo pesadas.
+
+\section{La elasticidad en la nube}
+
+Debido a que el cómputo en la nube está basado fundamentalmente en la virtualización de los recursos informáticos, este modelo de arquitectura ofrece una ventaja única, la posibilidad de hacer crecer y decrecer los recursos aprovisionados.
+
+Supongamos un servicio de streaming bajo demanda, como es el caso de Netflix. En este tipo de servicio la demanda crece los fines de semana y decrece los días entre semana.
+
+Si el proveedor del servicio no aprovisiona los recursos suficientes para atender la demanda del fin de semana, entonces muchos usuarios se quedarán sin servicio.
+
+Por otra parte, si el proveedor del servicio aprovisiona los recursos necesarios para atender a sus usuarios el fin de semana, estos recursos estarán subutilizados los días entre semana, lo cual resulta en pérdidas económicas.
+
+Sin lugar a dudas, el éxito que han alcanzado las empresas proveedoras de streaming bajo demanda, se debe a que su modelo de negocio está basado en la posibilidad que les ofrece la nube para crecer y decrecer los recursos aprovisionados, a esta característica de la nube se le llama elasticidad.
+
+El cómputo elástico es la habilidad de hacer crecer y decrecer rápidamente la capacidad de cómputo (CPUs), la memoria y el almacenamiento para adaptarse a la demanda.
+
+Para implementar el cómputo elástico se utilizan herramientas de monitoreo, las cuales aprovisionan y des-aprovisionan recursos conforme son necesarios, sin detener la operación.
+
+Sin embargo, hay proveedores de nube que afirman que no existe tal cosa como ``nube privada``, ya que el tema de elasticidad se ve acotado en un equipo ``privado`` debido a la limitada escalabilidad.
+
+En cambio, en la nube pública la escalabilidad es casi ilimitada, ya que si se agotan los recursos de un data center, sin ningún problema se puede escalar a otro data center, ya sea del mismo proveedor o de otros proveedores.
+
+Una característica importante de la nube (pública) es ``pagar por lo que se usa``, esto significa que solo se paga por los recursos aprovisionados.
+
+En el caso de un centro de cómputo tradicional (también es el caso de la ``nube privada``) la empresa paga por todo el equipo, lo use a toda su capacidad o no.
+
+Consideremos la siguiente gráfica:
+
+\subsection{Escenario On-premise}
+
+Al inicio los requerimientos informáticos de la empresa son pocos, sin embargo ésta debe hacer una gran inversión inicial ya que debe adquirir el equipo que le permita operar durante un periodo de tiempo determinado.
+
+Para saber cuál será la inversión inicial  se deberá hacer una planeación de capacidad.
+
+Suponiendo que la empresa crece, entonces en determinado momento deberá realizar la actualización de su equipo informático.
+
+Entonces se deberá hacer una planeación de capacidad para establecer el tamaño de la inversión, estimando un tiempo determinado de operación.
+
+No obstante las previsiones, la empresa podría decrecer, por tanto los requerimientos informáticos también decrecen. El costo de la actualización no se recupera, incluso, en poco tiempo el equipo se hará obsoleto.
+
+\subsection{Escenario nube}
+
+Ahora supongamos que la empresa utiliza servicios en la nube. Entonces la inversión inicial es mínima, ya que la empresa contratará los servicios indispensables para operar. Conforme la empresa crece, la elasticidad de la nube permite adecuar el tamaño de la infraestructura informática de acuerdo a las necesidades.
+
+Si la empresa decrece, también decrecen sus necesidades y el costo de la infraestructura informática. En la gráfica, las barras corresponden al costo de los servicios de nube. Podemos ver que este costo se ajusta a las necesidades de la empresa.
+
+Podemos concluir que al utilizar los servicios de nube se optimiza la relación costo/beneficio, ya que solo pagamos lo que realmente usamos.
+
+\end{document}

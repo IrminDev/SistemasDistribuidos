@@ -1,0 +1,3204 @@
+\part{Unidad 3}
+
+% Fuente: Almacenamiento.md
+
+\chapter{Almacenamiento en la nube}
+
+Los servicios de almacenamiento en la nube que vamos a estudiar en el curso son los siguientes:
+
+\begin{itemize}
+\item Azure Disk Storage. Discos para máquinas virtuales.
+\item Azure Blob Storage. Grandes objetos binarios (Binary Large Objects) no estructurados.
+\item Azure Files. Archivos compartidos (File Systems) en la nube.
+\end{itemize}
+
+\section{Azure Disk Storage}
+
+El servicio de Azure Disk Storage proporciona almacenamiento persistente para máquinas virtuales.
+
+Cuando se crea una máquina virtual, se crea un disco de arranque para el sistema operativo.
+
+También es posible crear discos de datos, independientes del disco de sistema operativo, los cuales se pueden adjuntar y quitar de la máquina virtual en cualquier momento.
+
+Los discos pueden ser discos administrados (managed disks) o discos no administrados (unmanaged disks), así mismo, pueden ser HDD (Hard Disk Drive) o SSD (Solid State Disk).
+
+Los discos de datos son utilizados como almacenamiento persistente para bases de datos, servidores de archivos (p.e. servidores web) y servidores de aplicaciones.
+
+Azure Disk Storage ofrece:
+
+\begin{itemize}
+\item Disponibilidad de 99.999\%
+\item Encriptado.
+\item Durabilidad grado empresarial con tres réplicas.
+\item Respaldo nativo.
+\end{itemize}
+
+\begin{itemize}
+\item Recuperación ante desastres.
+\item Monitoreo.
+\end{itemize}
+
+\section{Discos no administrados}
+
+Los discos no administrados deben ser administrados por el usuario, esto es, el usuario es responsable de administrar la infraestructura de almacenamiento y la replicación para alta disponibilidad.
+
+Los discos no administrados se almacenan en una cuenta de almacenamiento como blobs VHD (Virtual Hard Disk). El usuario debe crear y administrar la cuenta de almacenamiento y adjuntar los discos VHD a las máquinas virtuales.
+
+La escalabilidad de los discos no administrados está limitada por la capacidad de la cuenta de almacenamiento.
+
+\section{Discos administrados}
+
+En los discos administrados, Azure se encarga de la administración del almacenamiento y la replicación para alta disponibilidad.
+
+Los discos administrados se pueden adjuntar directamente con las máquinas virtuales.
+
+La escalabilidad no se ve limitada por la capacidad de una cuenta de almacenamiento.
+
+Los discos administrados pueden ser respaldados y restaurados directamente.
+
+\subsection{Discos HDD Standard}
+
+Los discos HDD estándares son recomendados para cargas de trabajo que no son críticas y accesos a los datos poco frecuentes.
+
+Los discos HDD estándares ofrecen una capacidad máxima de 32 TB, con 2,000 IOPS (operaciones de entrada/salida por segundo) y un ancho de banda de 500 MB por segundo.
+
+\subsection{Discos SSD Standard}
+
+Los discos SSD estándares son recomendados para cargas de trabajo de producción, con requerimientos de latencia consistente a bajo costo.
+
+Los discos SSD estándares ofrecen una capacidad máxima de 32 TB, con 6,000 IOPS (operaciones de entrada/salida por segundo) y un ancho de banda de 750 MB por segundo.
+
+\subsection{Discos SSD Premium}
+
+Los discos SSD premium son recomendados para cargas de trabajo de producción, con requerimientos de alto rendimiento.
+
+Los discos SSD premium ofrecen una capacidad máxima de 32 TB, con 20,000 IOPS (operaciones de entrada/salida por segundo) y un ancho de banda de 900 MB por segundo.
+
+\subsection{Discos Ultra}
+
+Los discos ultra son recomendados para las aplicaciones más demandantes en entrada/salida intensiva y latencias por debajo de un milisegundo.
+
+Los discos ultra ofrecen una capacidad máxima de 64 TB, con 160,000 IOPS (operaciones de entrada/salida por segundo) y un ancho de banda de 2 GB por segundo.
+
+\subsection{Crear un disco de datos administrado}
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\item En el campo de búsqueda escribir "Discos".
+\item Seleccionar la pestaña "Comenzar".
+\item Dar clic en el botón "Crear".
+\item Seleccionar un grupo de recursos o crear uno nuevo.
+\item Ingresar en nombre del disco.
+\item Seleccionar la región (la región debe ser la misma que la región de la máquina virtual a la que se conectará el disco).
+\item En el campo "Zona de disponibilidad" seleccionar la zona de disponibilidad o bien, seleccionar "No se requiere redundancia de la infraestructura".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Tamaño" seleccionar "Cambiar de tamaño".
+\item En el campo "Tipo de almacenamiento" seleccionar el tipo de disco a crear, p.e. "SSD estándar (almacenamiento con redundancia local)".
+\end{enumerate}
+
+Nota. El disco SSD Premium solo se puede adjuntar a máquinas virtuales creadas en una zona de disponibilidad.
+
+\begin{enumerate}
+\item Seleccionar el tamaño del disco, p.e. 4 GB.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\subsection{Adjuntar un disco de datos a una máquina virtual}
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual.
+\item Seleccionar la opción "Discos".
+\item Seleccionar la opción "Adjuntar discos existentes".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Nombre del disco" seleccionar el disco a adjuntar.
+\item Dar clic en el botón "Aplicar".
+\end{enumerate}
+
+Notar que un disco de datos puede ser adjuntado a la máquina virtual encendida.
+
+En Azure los nombres de los discos se asignan en el orden en que son detectados por el sistema, p.e. si el primer disco detectado es /dev/sda (el disco de sistema operativo), /dev/sdb sería el segundo, y así sucesivamente. En este caso, el primer disco de datos adjuntado sería /dev/sdc ya que ya existe un disco /dev/sdb.
+
+Para ver los nombres de los discos (asignados por Azure) y sus particiones, se puede ejecutar el siguiente comando:
+
+\begin{SourceCode}
+lsblk
+\end{SourceCode}
+
+Cuando se crea un nuevo disco de datos, éste viene como disco RAW, lo cual significa que no tiene un sistema de archivos (filesystem) que permita almacenar datos de manera estructurada. Por tanto, es necesario formatearlo antes de que pueda ser montado y utilizado.
+
+\subsection{Formatear un disco de datos}
+
+\begin{enumerate}
+\item Formatear con el sistema de archivos ext4 un disco de datos (p.e. /dev/sdc) recién creado:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkfs.ext4 /dev/sdc
+\end{SourceCode}
+
+\section{Montar un disco de datos}
+
+\begin{enumerate}
+\item Crear un punto de montaje (p.e. /mnt/datos):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir /mnt/datos
+\end{SourceCode}
+
+\begin{enumerate}
+\item Montar el disco en el punto de montaje:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mount /dev/sdc /mnt/datos
+\end{SourceCode}
+
+\subsection{Quitar un disco de datos de una máquina virtual}
+
+\begin{enumerate}
+\item Ingresar a la máquina virtual y desmontar el disco.
+\item Seleccionar la máquina virtual.
+\item Seleccionar la opción "Discos".
+\item Dar clic en ícono "Desasociar" que aparece al final del renglón correspondiente al disco que se va a quitar.
+\item Dar clic en el botón "Aplicar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ahora podemos ejecutar el comando lsblk para ver que el disco ya no está conectado a la máquina virtual.
+\end{enumerate}
+
+Notas:
+
+\begin{itemize}
+\item Un disco de datos puede ser desasociado de la máquina virtual encendida.
+\item Antes de desasociar un disco de datos es necesario desmontarlo.
+\end{itemize}
+
+\subsection{Eliminar un disco de datos}
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\item En el campo de búsqueda escribir "Discos".
+\item Seleccionar la pestaña "Recursos".
+\item Seleccionar el disco a eliminar.
+\item Dar clic en el ícono "Eliminar".
+\end{enumerate}
+
+Reproducir Vídeo
+
+\subsection{Encriptado de un disco de datos}
+
+Como una medida se seguridad, adicional al encriptado que realiza Azure, vamos a encriptar el disco de datos utilizando criptografía simétrica.
+
+\begin{enumerate}
+\item Crear un punto de montaje, p.e. /mnt/securedata:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir /mnt/securedata
+\end{SourceCode}
+
+\begin{enumerate}
+\item Instalar el módulo dm-crypt:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo apt-get update
+sudo apt-get install dmsetup cryptsetup
+\end{SourceCode}
+
+\begin{enumerate}
+\item Cargar el módulo dm-crypt:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo modprobe dm-crypt
+\end{SourceCode}
+
+\begin{enumerate}
+\item Verificar que el device-mapper haya reconocido el modulo dm-crypt y agregado crypt como destino disponible:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo dmsetup targets
+\end{SourceCode}
+
+\begin{enumerate}
+\item Debido a que el disco recien creado tiene un formato RAW, debemos formatear el disco para encripción, en este caso el disco es /dev/sdc:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo cryptsetup -y luksFormat /dev/sdc
+\end{SourceCode}
+
+Se debe ingresar la clave (passphrase).
+
+\begin{enumerate}
+\item Verificar que el disco ha sido inicializado para encripción:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo cryptsetup luksDump /dev/sdc
+\end{SourceCode}
+
+\begin{enumerate}
+\item Inicializar un device mapper para ser montado (aqui "securedata" es el nombre del device mapeado, notar que el device mapper se coloca en el directorio /dev/mapper:  /dev/mapper/securedata):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo cryptsetup luksOpen /dev/sdc securedata
+\end{SourceCode}
+
+\begin{enumerate}
+\item Formatear el device mapper (en este caso con el tipo de filesystem ext4):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkfs.ext4 -m 0 /dev/mapper/securedata
+\end{SourceCode}
+
+\begin{enumerate}
+\item Montar el device mapper:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mount /dev/mapper/securedata /mnt/securedata
+\end{SourceCode}
+
+\begin{enumerate}
+\item Para ver el filesystem montado, ejecutar el comando:
+\end{enumerate}
+
+\begin{SourceCode}
+df
+\end{SourceCode}
+
+Notar que el directorio punto de montaje es propiedad del usuario root y del grupo root, si es necesario se puede cambiar el propietario y grupo.
+
+\begin{enumerate}
+\item Para desmontar el device mapper y cerrar el encriptado:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo umount /mnt/securedata
+sudo cryptsetup luksClose securedata
+\end{SourceCode}
+
+\begin{enumerate}
+\item Para montar nuevamente el disco (cada vez que se reinicie la máquina virtual):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo cryptsetup luksOpen /dev/sdc securedata
+sudo mount /dev/mapper/securedata /mnt/securedata
+\end{SourceCode}
+
+\subsection{Cómo leer un disco a nivel RAW}
+
+El siguiente programa permite leer un disco a nivel RAW (a un nivel por debajo del sistema de archivos), para verificar que los datos se almacenan encriptados, por otra parte, si el disco se formateó y se montó sin encriptar, entonces los datos aparecerán en claro:
+
+\begin{SourceCode}
+// Carlos Pineda G. 2012
+// Requiere instalar gcc:
+// sudo apt-get update
+// sudo apt-get install gcc
+// Se compila:
+// gcc -o p p.c
+// Se ejecuta:
+// sudo ./p
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+#define LONG_BUFFER (4*1024)
+char buffer[LONG_BUFFER];
+int main ()
+{
+  FILE *f = fopen("aquí va el nombre del device, p.e. /dev/sdc","rb");
+  int i;
+  if (f == NULL)
+  {
+fprintf(stderr,"Error al abrir el device, errno=%i\n",errno);
+return -1;
+  }
+  for(;;)
+  {
+fread(buffer,LONG_BUFFER,1,f);
+if (feof(f))
+break;
+for (i = 0; i < LONG_BUFFER; i++)
+if (isprint(buffer[i]))
+printf("%c",buffer[i]);
+  }
+  return 0;
+}
+\end{SourceCode}
+
+\clearpage
+
+% Fuente: AzureBackup.md
+
+\chapter{La clase de hoy vamos a ver el servicio de respaldos en la nube de Azure.}
+
+\section{Microsoft Azure Backup}
+
+Azure Backup es un servicio de respaldos en la nube al nivel de PaaS, que no requiere que el usuario cuente con el personal para realizar los respaldos ni la instalación de una infraestructura de almacenamiento.
+
+Azure Backup permite respaldar y restaurar archivos, directorios, máquinas virtuales completas, bases de datos de SQL Server, o archivos y directorios On-Premise (mediante un agente que ejecuta en el equipo local).
+
+Azure Backup es un servicio al nivel de plataforma (PaaS: Platform as a Service) debido a que se trata de un servicio de respaldos totalmente administrado sin la necesidad de crear una infraestructura (máquina virtual y almacenamiento).
+
+Para proteger al usuario de ataques de ransomware (secuestro de datos) Azure Backup implementa la autenticación multi-factor. Así mismo, genera alertas si se detecta actividad sospechosa de respaldo o restauración de los datos del usuario.
+
+Reproducir Vídeo
+
+\section{Punto de restauración}
+
+Cada vez que se ejecuta el proceso de respaldo (backup job) para un recurso (p.e. una máquina virtual), se crea un punto de restauración, entonces es posible utilizar cualquier punto de restauración para recuperar los datos que se tenían en un momento dado.
+
+Después del primer respaldo completo, los subsecuentes respaldos serán incrementales, es decir, solo van a incluir los cambios (archivos nuevos, archivos eliminados y archivos modificados) realizados desde el último respaldo.
+
+\section{Almacén de Recovery Services}
+
+Un almacén de Recovery Services (vault) es un contenedor lógico que almacena los puntos de restauración.
+
+Cuando el proceso de respaldo es eliminado, Azure Backup retiene por dos semanas los datos en el almacén del recovery services, de manera que el usuario puede recuperar los respaldos en caso de borrado accidental.
+
+Al eliminar el proceso de respaldo no se elimina el almacén de Recovery Services.
+
+Al eliminar el proceso de respaldo, los puntos de restauración quedan en estado soft-deleted durante 14 días (o más si se configura Enhanced Soft Delete con un período mayor).
+
+Mientras existan puntos de restauración en soft-deleted, no se puede eliminar el vault.
+
+Pasados los 14 días, los puntos de restauración se borran definitivamente, sin embargo, el vault sigue existiendo. Por tanto, es necesario eliminar explícitamente el vault. Una característica importante de Azure Backup es que no limita la transferencia de datos de entrada o de salida.
+
+La transferencia de datos de entrada se refiere a los datos transferidos al almacén de Recovery Services cuando se realiza el respaldo.
+
+La transferencia de datos de salida se refiere a los datos que son transferidos desde el almacén de Recovery Services cuando se realiza una restauración.
+
+\section{Geo-Redundant storage}
+
+Por omisión, el almacén de Recovery Services se crea como Geo-Redundant storage, lo cual asegura que los datos respaldados se replicarán en una región a cientos de kilómetros de la región actual.
+
+\section{Políticas de respaldo}
+
+Es posible crear políticas de respaldo (también llamadas directivas de copia de seguridad), donde se define cuando se ejecuta el proceso de respaldo (backup job) y por cuánto tiempo se almacenarán los puntos de restauración.
+
+Por omisión, la política de respaldo DailyPolicy ejecuta un respaldo diario y mantiene los puntos de restauración por 30 días.
+
+\section{Restauración de una máquina virtual}
+
+La restauración de una máquina virtual se realiza seleccionando un punto de restauración.
+
+Para restaurar una máquina virtual completa no es necesario detener o eliminar la máquina virtual previamente respaldada.
+
+Para conectarse a la máquina virtual restaurada de utiliza el usuario y contraseña de la máquina virtual respaldada.
+
+\section{Costo de Azure Backup}
+
+Azure Backup tiene costo (Azure Backup pricing) sin embargo es más barato que aprovisionar una máquina virtual con discos de almacenamiento para ejecutar los respaldos y mantener los datos.
+
+El costo mensual del servicio de Azure Backup se calcula en base al tamaño del disco de la máquina virtual más el almacenamiento.
+
+\section{Ventajas de Azure Backup}
+
+Azure Backup tiene entre otras ventajas:
+
+\begin{itemize}
+\item La replicación automáticamente en otra región geográficamente alejada.
+\item Los mecanismos de seguridad adicionales como las notificaciones de actividad sospechosa y la autenticación multi-factor.
+\item La creación de puntos de restauración de la máquina virtual en diferentes tiempos sin tener que sacarla de producción.
+\end{itemize}
+
+\section{Referencias}
+
+\begin{itemize}
+\item Quick start - Back up a virtual machine in Azure
+\item Azure Backup pricing
+\item How to restore Azure VM data in Azure portal
+\item Redundancia de Azure Storage
+\end{itemize}
+
+\begin{itemize}
+\item What is Azure Backup service?
+\end{itemize}
+
+\chapter{Actividades individuales a realizar}
+
+En esta actividad vamos a realizar un respaldo de una máquina virtual en Azure y la recuperación de la máquina virtual a partir del respaldo.
+
+\section{Habilitar el respaldo de una máquina virtual en Azure}
+
+\begin{enumerate}
+\item En el portal de Azure, seleccionar la máquina virtual que se va a respaldar o bien, crear una nueva máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Backup".
+\end{enumerate}
+
+\begin{enumerate}
+\item Crear un almacén de Recovery Services.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el grupo de recursos donde se colocará el almacén.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la política de respaldo, por omisión DailyPolicy, o dar clic en "Crear una nueva directiva" para crear una nueva política de respaldo.
+\end{enumerate}
+
+Si se crea una nueva política se puede definir la frecuencia de respaldo (diario o semanal), la hora en la que se realizará el respaldo y el tiempo que se conservará los puntos de restauración.
+
+\begin{enumerate}
+\item Dar clic en el botón "Habilitar Backup"
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en la campana de notificaciones para verificar que se haya realizado la implementación del proceso de respaldo.
+\end{enumerate}
+
+\section{Iniciar un respaldo completo}
+
+Anteriormente vimos cómo habilitar un proceso de respaldo (backup job) para realizar un respaldo diario de una máquina virtual completa a cierta hora del día.
+
+Para iniciar al momento el respaldo completo de la máquina virtual:
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual en el portal de Azure. Seleccionar "Backup" en el menú de operaciones.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Realizar copia de seguridad ahora" para crear el primer respaldo completo de la máquina virtual. Los subsecuentes respaldos automáticos serán incrementales.
+\end{enumerate}
+
+\begin{enumerate}
+\item Indicar la fecha de retención de la copia de seguridad o aceptar la fecha establecida en la política de respaldo utilizada (por omisión, 30 días).
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Aceptar"
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en la campana de notificaciones para verificar que se haya iniciado el respaldo de la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Para ver el progreso del respaldo seleccionar la opción "Ver todos los trabajos" en la página "Backup" de la máquina virtual. Seleccionar la opción "Actualizar" para refrescar la pantalla que muestra el estado del proceso de respaldo. El respaldo ha terminado cuando se despliega "Completada".
+\end{enumerate}
+
+El tiempo que tarda el respaldo depende del número de procesadores virtuales, el tamaño de la memoria RAM y el tamaño del disco en la máquina virtual. El respaldo tardará más si la máquina virtual tiene poca memoria y pocos procesadores virtuales o el disco es grande.
+
+Una vez terminado el respaldo en la página "Backup" de la máquina virtual aparecerá el punto de restauración creado.
+
+\section{Restaurar una máquina virtual}
+
+Para restaurar una máquina virtual completa:
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual en el portal de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Backup" en el menú de "Operaciones".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Restaurar VM".
+\end{enumerate}
+
+\begin{enumerate}
+\item En "Punto de restauración" dar clic en la opción "Seleccionar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el punto de restauración y dar clic en el botón "Aceptar".
+\end{enumerate}
+
+\begin{enumerate}
+\item En "Tipo de restauración" seleccionar "Crear una nueva máquina virtual".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la nueva máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la red virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la ubicación del almacenamiento provisional. Esta cuenta de almacenamiento se utilizará temporalmente durante la restauración.
+\end{enumerate}
+
+Si no se encuentra una cuenta de almacenamiento será necesario crearla de la siguiente manera (cerrar la ventana actual "Restauración de la máquina virtual"):
+
+9.1 En la ventana de búsqueda de Azure escribir: cuentas de almacenamiento 9.2 Dar clic en la opción +Crear 9.3 Seleccionar el grupo de recursos de la máquina virtual. 9.4 Ingresar un nombre para la cuenta de almacenamiento (no debe existir en Azure). 9.5 Seleccionar la misma ubicación del vault (almacén de Recovery Services) en el procedimiento Habilitar el respaldo de una máquina virtual en Azure. 9.6 En "Replicación" seleccionar "Almacenamiento con redundancia local (LRS)" 9.7 Dar clic en el botón "Revisar y crear". 9.8 Dar clic en el botón "Crear". 9.9 Ir al primer paso del procedimiento Restaurar una máquina virtual.
+
+\begin{enumerate}
+\item Dar clic en el botón "Restaurar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en la campana de notificaciones para verificar que se haya iniciado la restauración de la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Para ver el progreso de la restauración seleccionar la opción "Ver todos los trabajos" en la página "Backup" de la máquina virtual. Seleccionar la opción "Actualizar" para refrescar la pantalla que muestra el estado del proceso de restauración.
+\end{enumerate}
+
+Una vez terminada la restauración de la máquina virtual, la nueva máquina virtual aparecerá en la lista de máquinas virtuales en el portal de Azure.
+
+Para conectar con la nueva máquina virtual se utilizará las mismas credenciales (usuario y contraseña) definidas para la máquina virtual respaldada.
+
+Podemos verificar que la configuración de la nueva máquina virtual es idéntica a la configuración de la máquina virtual respaldada.
+
+\section{Eliminar un proceso de respaldo}
+
+Para eliminar un proceso de respaldo y los puntos de respaldo asociados:
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual en el portal de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Backup" en el menú de "Operaciones".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Detener copia de seguridad". Si no se ve la opción presionar los tres puntos ...
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Retener datos de copia de seguridad" o bien "Eliminar datos de copia de seguridad".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre del elemento de copia de seguridad, es este caso el nombre de la máquina virtual respaldada.
+\end{enumerate}
+
+\begin{enumerate}
+\item Opcionalmente se puede indicar el motivo por el cual se va a eliminar el proceso de respaldo. También es posible escribir algún comentario en la ventana "Comentarios".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Detener copia de seguridad".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en la campana de notificaciones para verificar que se haya detenido el proceso de copia de seguridad y en su caso, se haya eliminado los datos.
+\end{enumerate}
+
+\begin{enumerate}
+\item Para eliminar el almacén de Recovery Services (vault) hacer lo siguiente:
+\end{enumerate}
+
+Nota importante: Para eliminar el almacén de Recovery Services es necesario que hayan pasado 14 días desde el último respaldo, ya que la retención de los datos es por dos semanas: "Recovery Services vault cannot be deleted as there are backup items in soft deleted state in the vault. The soft deleted items are permanently deleted after 14 days of delete operation". Fuente: Portal de Microsoft Azure.
+
+9.1 Ir al inicio del portal de Azure. 9.2 Seleccionar "Todos los recursos. 9.3 Seleccionar el vault (almacén de Recovery Services) a eliminar (tener la precaución de seleccionar el almacén correcto). 9.4 Seleccionar también la cuenta de almacenamiento, si se creó la cuenta de almacenamiento en el paso 9 del procedimiento Restaurar una máquina virtual. 9.5 Seleccionar la opción "Eliminar". 9.6 Confirmar la eliminación del almacén dando clic al botón "Sí" 9.7 Dar clic en la campana de notificaciones para verificar que se haya eliminado el almacén.
+
+\clearpage
+
+% Fuente: AzureDatabase.md
+
+En clases anteriores vimos servicios de la nube al nivel de infraestructura (IaaS: Infrastructure as a Service), como son la creación de máquinas virtuales con Windows y Linux, la creación de imágenes de máquinas virtuales, NSG, NIC, creación de redes y subredes virtuales, VPN Gateways y balance de carga.
+
+La clase de hoy veremos el servicio administrado de base de datos MySQL, el cual ofrece Azure al nivel de plataforma (PaaS: Platform as a Service).
+
+\section{Azure Database for MySQL}
+
+Cuando una empresa instala sus sistemas en la nube requiere así mismo tener acceso a un DBMS.
+
+Uno de los más populares manejadores de bases de datos en la actualidad es MySQL (usado por empresas de clase mundial como Google, YouTube, Facebook, Twitter, PayPal, etc.), el cual puede utilizarse en su versión gratuita (Community Server) o en su versión Enterprise Edition.
+
+Como hemos visto en clases previas, es fácil instalar MySQL sobre una máquina virtual, crear una base de datos y acceder a ella utilizando el monitor de mysql o un programa escrito en algún lenguaje como Java, C\#, Python, Node.js, entre otros.
+
+Sin embargo, en un entorno empresarial será necesario llevar a cabo la administración de MySQL, lo cual incluye la instalación, monitoreo, respaldo de las bases de datos, recuperación ante desastres, espejo de discos, etc.
+
+Entonces la empresa tiene dos opciones, la primera es contratar el personal que se encargue de la administración del DBMS, y la segunda contratar el servicio completo en la nube. Este servicio de DBMS completamente administrado es un ejemplo de plataforma como servicio (PaaS).
+
+Azure ofrece MySQL Community Server completamente administrado como servicio.
+
+Este servicio de nube, llamado Azure Database for MySQL, permite a la empresa delegar la administración de la base de datos y contar con alta disponibilidad (99.99\%) y escalabilidad dinámica, así como el acceso remoto a MySQL mediante conexión segura.
+
+\section{Referencias}
+
+\begin{itemize}
+\item ¿Qué es PaaS?
+\item Azure Database for MySQL
+\end{itemize}
+
+\begin{itemize}
+\item ¿Qué es Azure Database for MySQL (servidor flexible)?
+\end{itemize}
+
+\section{Crear un servidor en Azure Database for MySQL}
+
+Ahora vamos a crear una instancia de MySQL al nivel de PaaS en la nube de Azure.
+
+Para crear una instancia de MySQL:
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item En la barra de búsqueda escribir: Servidores de Azure Database for MySQL
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en "+Crear"
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Creación avanzada" en el cuadro "Servidor flexible".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar un grupo de recursos existente o crear uno nuevo.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre del servidor, este nombre debe ser único en Azure ya que se le agregará un subdominio de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región.
+\end{enumerate}
+
+Nota. No todas las regiones soportan la creación de instancias de MySQL, si se produce un error al crear la instancia, cambiar la región.
+
+\begin{enumerate}
+\item Seleccionar la versión de MySQL, por ejemplo 8.0
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Tipo de carga de trabajo" seleccionar "Para proyectos de desarrollo o aficiones"
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Configurar servidor" en la sección "Proceso y almacenamiento".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Computer tier" seleccionar "Flexible".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Tamaño de proceso" seleccionar "Standard\_B1ms".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Storage size (in GiB)" seleccionar: 20
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "IOPS" seleccionar "IOPS aprovisionados previamente". Mover el control deslizante a los IOPS (I/O per second) requerimos.
+\end{enumerate}
+
+\begin{enumerate}
+\item Habilitar "Crecimiento automático del almacenamiento".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Guardar".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Método de autenticación" seleccionar "Autenticación de MySQL". Ingresar el "Nombre de usuario de administrador" (notar que no se permite ingresar "root" ya que este usuario está reservado para la administración del DBMS por parte de Azure).
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar la contraseña. Confirmar la contraseña ingresada.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Siguiente: Redes >".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Método de conectividad" seleccionar "Acceso público".
+\end{enumerate}
+
+Nota. Si se selecciona "Acceso privado" se deberá indicar la red y subred a la que se conectará la máquina virtual que ejecutar MySQL.
+
+20.1 Habilitar el campo "Permitir el acceso público a este recurso a través de Internet mediante una dirección IP pública"
+
+\begin{enumerate}
+\item Ahora vamos a configurar el firewall del servidor:
+\end{enumerate}
+
+21.1 Para que la computadora actual pueda conectarse al servidor (p.e. para ejecutar el monitor de mysql), seleccionar la opción "+ Agregar dirección IP del cliente actual".
+
+21.2 Para que otra computadora se pueda conectar al servidor, ingresar en los campos "IP inicial" y en "IP final" la IP de la computadora.
+
+21.3 Para que cualquier computadora se pueda conectar al servidor, ingresar 0.0.0.0 como IP inicial y 255.255.255.255 como IP final, pero esto no es recomendable por razones de seguridad.
+
+21.4 Para que todos los recursos de Azure (máquinas virtuales, Azure Functions, etc.) tengan acceso al servidor (incluso los recursos que no están en la misma suscripción), seleccionar "Si" en la opción "Permitir el acceso público a este servidor desde cualquier servicio de Azure dentro de Azure"
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el panel seleccionar la opción "Información general" en el menú de la izquierda de la pantalla.
+\end{enumerate}
+
+Podemos ver el nombre del dominio del servidor (en este caso el servidor se llama prueba-mysql):
+
+prueba-mysql.mysql.database.azure.com
+
+\begin{enumerate}
+\item Dar clic al botón "Revisar" en la sección "Ver cadena de conexión".
+\end{enumerate}
+
+25.1 Abrir la pestaña "Conectarse desde el explorador o localmente"
+
+\begin{SourceCode}
+Ahora podemos conectarnos al servidor de MySQL ejecutando el siguiente comando:
+
+mysql -h prueba-mysql.mysql.database.azure.com -P 3306 -u administrador -p
+\end{SourceCode}
+
+En este caso el usuario configurado en el paso 17 es "administrador".
+
+\section{Crear una base de datos}
+
+\begin{SourceCode}
+create database servicio_web;
+
+use servicio_web;
+
+create table usuarios
+(
+id_usuario integer auto_increment primary key,
+email varchar(100) not null,
+nombre varchar(100) not null,
+apellido_paterno varchar(100) not null,
+apellido_materno varchar(100),
+fecha_nacimiento datetime not null,
+telefono varchar(20),
+genero char(1)
+);
+
+create table fotos_usuarios
+(
+id_foto integer auto_increment primary key,
+foto longblob,
+id_usuario integer not null
+);
+
+alter table fotos_usuarios add foreign key (id_usuario) references usuarios(id_usuario);
+create unique index usuarios_1 on usuarios(email);
+\end{SourceCode}
+
+\section{Crear un usuario remoto}
+
+Para crear un usuario local en MySQL, se agrega al nombre del usuario "@localhost".
+
+Para crear un usuario que pueda acceder en forma remota MySQL, en este caso el usuario se llama "hugo":
+
+create user hugo identified by 'contraseña-del-usuario-hugo';
+
+grant all on servicio\_web.* to hugo;
+
+\section{Detener o eliminar la instancia de MySQL}
+
+Para evitar mayores gastos se puede detener o eliminar la instancia de MySQL.
+
+\clearpage
+
+% Fuente: BalanceadorCarga.md
+
+\chapter{Balance de carga en la nube}
+
+El balance de carga es la distribución equilibrada de carga entre un grupo de servidores (p.e. servidores web) o recursos en el back-end (p.e. unidades de almacenamiento).
+
+La carga es el tráfico de red entrante a un recurso, por ejemplo, las peticiones a un servidor o las lecturas/escrituras a una unidad de almacenamiento.
+
+\section{Azure Load Balancer}
+
+El balanceador de carga en Azure opera en la capa de transporte (nivel 4) del modelo OSI, por tanto, soporta los protocolos TCP y UDP.
+
+El balanceador de carga utiliza un algoritmo de distribución haciendo el hash de cinco elementos: la IP de origen, el puerto de origen, la IP de destino, el puerto de destino y el tipo de protocolo
+
+En Azure se puede crear dos tipos de balanceadores de carga:
+
+\subsection{Balanceador de carga público}
+
+Un balanceador de carga público mapea la dirección IP pública (IP de front-end) y el puerto a una dirección IP privada y puerto de una máquina virtual (la IP pública y el puerto conforman un endpoint de Internet).
+
+Utilizando reglas en el balanceador de carga, es posible distribuir la carga por tipo de tráfico (HTTP, HTTPS, FTP, SMTP, SSH, RDP, MySQL, SQLServer, etc).
+
+\subsection{Balanceador de carga interno}
+
+Un balanceador de carga interno distribuye el tráfico entre los recursos que se encuentran dentro de una red virtual.
+
+Este tipo de balanceador de carga se utiliza para balancear carga (interna) que viene del firewall o para balancear la carga de las máquinas virtuales que ejecutan procesos de negocio que no son visibles al usuario externo.
+
+La IP de un balanceador de carga interno nunca se expone como endpoint de Internet.
+
+En un escenario de nube híbrida, es posible conectar servidores on-premise a un balanceador de carga interno.
+
+\section{Escalamiento mediante balance de carga}
+
+El balance de carga permite escalar las aplicaciones e implementar servicios con alta disponibilidad dentro de una zona de disponibilidad y a través de diferentes zonas de disponibilidad.
+
+Agregando máquinas virtuales al balanceador de carga los sistemas incrementan su capacidad de atender peticiones, así mismo, se evita la interrupción del servicio cuándo uno de los servidores falla.
+
+\subsection{Sondeo de estado}
+
+Los sondeos de estado permiten verificar el estado de cada máquina virtual (instancia de back-end) conectada al balanceador de carga. Si el sondeo de estado no recibe respuesta de la máquina virtual entonces no se enviarán peticiones a la máquina virtual hasta que el sondeo de estado se restablezca.
+
+El balanceador de carga estándar soporta sondeo de estado mediante los protocolos TCP, HTTP y HTTPS.
+
+Antes de agregar reglas de equilibrio de carga a un balanceador de carga es necesario crear al menos un sondeo de estado. Ver: Sondeos de estado de Azure Load Balancer.
+
+\section{Región}
+
+Una región es un área geográfica con un conjunto de datacenters interconectados mediante una red de baja latencia.
+
+\subsection{Datacenter}
+
+Un datacenter es una instalación física con infraestructura de servidores, redes y almacenamiento.
+
+Fuente: Microsoft
+
+Cada datacenter cuenta con contenedores modulares (similares a los contenedores que utiliza el transporte marítimo).
+
+Los contenedores se reciben completamente ensamblados y cuentan con tres entradas principales:
+
+\begin{itemize}
+\item Agua. Se utiliza para refrigerar los servidores.
+\item Energía. Suministra la energía eléctrica a los servidores.
+\item Red. Permite la conexión de los servidores con el exterior.
+\end{itemize}
+
+Cada contenedor puede tener cientos de servidores; los contenedores más grandes pueden tener entre 250 y 2,500 servidores.
+
+Cada servidor tiene 2 o 4 CPU físicos, y cada CPU puede tener entre 24 y 64 núcleos (p.e. la serie Intel Xenon o AMD EPYC)
+
+Cada servidor puede tener entre 64 GB y 1 TB de memoria RAM.
+
+Cada servidor puede tener un almacenamiento local SSD entre 1 TB y 4 TB.
+
+En los contenedores se usan redes de 10 Gbps a 100 Gbps para la conectividad interna y externa.
+
+\subsection{Zona de disponibilidad}
+
+Una zona de disponibilidad (Availability Zone) se compone por uno o más datacenters de una misma región, equipados con su propia alimentación, refrigeración y red.
+
+Si una zona de disponibilidad falla, otras zonas estarán disponibles dentro de la misma región.
+
+Las zonas de disponibilidad permiten implementar alta disponibilidad en caso de fallas de energía, red o refrigeración a nivel datacenter.
+
+\subsection{Conjunto de disponibilidad}
+
+Un conjunto de disponibilidad es una agrupación lógica de máquinas virtuales de una región, distribuidas en dominios de error y dominios de actualización.
+
+Los conjuntos de disponibilidad reducen el riesgo de interrupciones en las máquinas virtuales por fallas de hardware o mantenimientos planificados.
+
+El conjunto de disponibilidad se deberá asignar al momento de crear la máquina virtual, una vez creada la máquina virtual, no es posible asignar una máquina virtual a un conjunto de disponibilidad.
+
+Un conjunto de disponibilidad consta de:
+
+\begin{itemize}
+\item 1, 2 o 3 dominios de error. Las máquinas virtuales que pertenecen a un mismo dominio de error comparten la misma fuente de alimentación, red física y refrigeración. En este caso, la alimentación, la red y la refrigeración son, cada uno, un único punto de fallo. En el siguiente ejemplo, se muestran cuatro máquinas virtuales distribuidas en dos dominios de error:
+\end{itemize}
+
+\begin{itemize}
+\item De 1 a 20 dominios de actualización. Las máquinas virtuales dentro de un mismo dominio de actualización se reiniciarán simultáneamente durante el mantenimiento planeado. Solo se reiniciará un dominio de actualización a la vez. Si se creó un dominio de error, solo se puede crear un dominio de actualización. En el siguiente ejemplo, se muestran cuatro máquinas virtuales distribuidas en tres dominios de actualización; solo se apagará un dominio de actualización a la vez (en este caso, se está apagando el primer dominio de actualización) en caso de un mantenimiento planificado:
+\end{itemize}
+
+El conjunto de disponibilidad se deberá asignar al momento de crear la máquina virtual.
+
+Azure no cobra por los conjuntos de disponibilidad; el pago es por cada máquina virtual dentro del conjunto de disponibilidad.
+
+\section{Costo del balance de carga en Azure}
+
+En Azure se puede configurar reglas de equilibrio de carga y reglas NAT.
+
+Las reglas NAT son utilizadas para mapear el tráfico entre las direcciones IP públicas y privadas.
+
+Las reglas de equilibrio de carga se cobran por número de reglas por hora.
+
+Además, se cobra la cantidad de datos procesados de entrada y de salida, independientemente de las reglas.
+
+En el Standard Load Balancer no se cobra por hora si no hay reglas configuradas.
+
+Las reglas NAT son gratuitas. Ver: Precios de Load Balancer
+
+El siguiente modelo muestra los componentes de un balanceador de carga en Azure:
+
+\clearpage
+
+% Fuente: Blob.md
+
+\chapter{Azure Blob Storage}
+
+Azure Blob Storage es un servicio que permite almacenar cantidades masivas de datos no estructurados, a un costo reducido.
+
+Azure Blob Storage es escalable, durable, seguro y con la capacidad de manejar cargas de trabajo sobre demanda.
+
+Azure Blob Storage puede almacenar objetos binarios, tales como datos binarios utilizados por las aplicaciones, videos, audios, textos, respaldos, etc. Los blobs se organizan en contenedores.
+
+Azure Blob Storage permite optimizar los costos, ya que ofrece la posibilidad de colocar los datos en diferentes niveles de acceso (access tiers) de acuerdo a la frecuencia en la que son accedidos y/o modificados los datos:
+
+\begin{itemize}
+\item Frecuente (hot tier). Nivel online optimizado para almacenar datos que son accedidos y modificados frecuentemente. Este nivel es el más rápido y el más costoso.
+\item Esporádico (cool tier). Nivel online optimizado para almacenar datos que son accedidos y modificados con poca frecuencia. Este nivel es más lento y menos costoso que el nivel "frecuente". Los datos en el nivel "esporádico" deben almacenarse como mínimo 30 días.
+\item Inactivo (cold tier). Nivel online optimizado para almacenar datos que casi nunca son accedidos o modificados. Este nivel más lento y menos costoso que el nivel "esporádico". Los datos en el nivel "inactivo" deben almacenarse como mínimo 90 días.
+\item Archivo (archive tier). Nivel offline optimizado para almacenar datos que casi nunca son accedidos y con la posibilidad de ser accedidos con altas latencias (del orden de horas). Los datos en el nivel "archivo" deben almacenarse como mínimo 180 días.
+\end{itemize}
+
+\section{Notas}
+
+\begin{itemize}
+\item El nivel de acceso predeterminado es "frecuente".
+\item Para cambiar al nivel de acceso "esporádico", se debe seleccionar la opción "Configuración" en la cuenta de almacenamiento.
+\item El nivel de acceso "archivo" solo se puede establecer para el blob no para la cuenta de almacenamiento.
+\end{itemize}
+
+Para acceder los blobs es posible utilizar APIs para .NET, Java, Python, JavaScript, C++, y Go, o bien, la API REST de Azure Blob Storage.
+
+\section{Reproducir Vídeo}
+
+\section{Referencias}
+
+\begin{itemize}
+\item Introduction to Azure Storage
+\item Niveles de acceso frecuente, esporádico y de archivo para los datos de blobs
+\item Delegación del acceso mediante una firma de acceso compartido
+\item Azure Blob Storage pricing
+\end{itemize}
+
+Para utilizar Azure Blob Storage, se debe crear una cuenta de almacenamiento, y dentro de ésta, se podrán crear contenedores; cada contenedor tiene una capacidad máxima de 100 TB. Una vez que hemos creado un contenedor, podemos cargar los archivos (blobs) al contenedor.
+
+Ahora veremos cómo crear una cuenta de almacenamiento, un contenedor, y cómo cargar y acceder blobs.
+
+\section{Crear una cuenta de almacenamiento}
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\item En el campo de búsqueda escribir "Cuentas de almacenamiento".
+\item Seleccionar "+Crear".
+\item Seleccionar un grupo de recursos o crear uno nuevo.
+\item Ingresar en nombre de la cuenta de almacenamiento. El nombre debe ser único en Azure, de 3 a 24 caracteres (letras minúsculas y dígitos).
+\item Seleccionar la región.
+\item En el campo "Servicio principal" seleccionar "Azure Blob Storage o Azure Data Lake Storage Gen2".
+\item En el campo "Rendimiento" seleccionar "Estándar". Esta selección no se puede cambiar después de crear la cuenta de almacenamiento.
+\item En el campo "Redundancia" seleccionar "Almacenamiento con redundancia local (LRS)".
+\item Dar clic en el botón "Revisar".
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\section{Crear un contenedor en una cuenta de almacenamiento}
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar "Contenedores" en la sección "Almacenamiento de datos".
+\item Agregar un contenedor seleccionando en la opción "+Contenedor".
+\item Ingresar el nombre del contenedor. El nombre solo puede contener letras minúsculas, números o guiones, debe iniciar con una letra o número, no puede contener guiones seguidos.
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\section{Cargar archivos a un contenedor}
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar "Contenedores".
+\item Seleccionar el contenedor.
+\item Seleccionar la opción "Cargar".
+\item Seleccionar "Buscar archivos".
+\item Seleccionar el archivo en la ventana.
+\item Dar clic en el botón "Cargar".
+\end{enumerate}
+
+Crear un token de acceso compartido (SAS: Shared Access Signature) para un contenedor
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar "Contenedores".
+\item Seleccionar el contenedor.
+\item Seleccionar "Tokens de acceso compartido" en la sección "Configuración".
+\item Seleccionar método de firma "Clave de cuenta".
+\item En el campo "Clave de firma" seleccionar la clave que se va a asociar a la SAS (clave 1 o clave 2).
+\item En el campo "Permisos" seleccionar los permisos que se otorgarán.
+\item Si se requiere restringir desde donde se accederá el blob, ingresar la IP o intervalo de IPs.
+\item Dar clic en el botón "Generar URL y token de SAS".
+\item Copiar la URL que aparece en el campo "URL de SAS de Blob".
+\end{enumerate}
+
+La forma de una URL de contenedor es la siguiente:
+
+\url{https://<cuenta-de-almacenamiento>.blob.core.windows.net/<nombre-del-contenedor>?sp=r&st=<fecha-UTC-inicial>&se=<fecha-UTC-final>&spr=https&sv=2022-11-02&sr=c&sig=<SAS>}
+
+Crear un token de acceso compartido (SAS: Shared Access Signature) para un blob
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar "Contenedores".
+\item Seleccionar el contenedor.
+\item En el menú contextual del blob (los tres puntos al final) seleccionar la opción "Generar SAS".
+\item Seleccionar método de firma "Clave de cuenta".
+\item En el campo "Clave de firma" seleccionar la clave que se va a asociar a la SAS (clave 1 o clave 2).
+\item En el campo "Permisos" seleccionar los permisos que se otorgarán.
+\item Si se requiere restringir desde donde se accederá el blob, ingresar la IP o intervalo de IPs.
+\item Dar clic en el botón "Generar URL y token de SAS".
+\item Copiar la URL que aparece en el campo "URL de SAS de Blob".
+\end{enumerate}
+
+Nota. A partir de una URL de contenedor, es posible obtener una URL para acceder un blob en el contenedor, solo se agrega el nombre del blob (nombre del archivo) a la URL del contenedor:
+
+https://<cuenta-de-almacenamiento>.blob.core.windows.net/<nombre-del-contenedor>/<nombre-del-blob>?sp=<permisos>\&st=<fecha-UTC-inicial>\&se=<fecha-UTC-final>\&spr=https\&sv=2022-11-02\&sr=<tipo de SAS: c: contenedor, b: blob>\&sig=<SAS>
+
+\section{Revocar una o varias SAS}
+
+Para revocar (invalidar) una o varias SAS, asociadas a una clave de acceso de una cuenta de almacenamiento (Clave 1 o clave 2), se deberá cambiar (girar) la clave:
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar la opción "Claves de acceso".
+\item Para cambiar una clave, dar clic en "Girar clave" en la clave 1 o la clave 2 (key1 o key2).
+\end{enumerate}
+
+\section{Notas}
+
+\begin{itemize}
+\item Se puede tener varias SAS simultáneamente.
+\item Una vez que se ha girado la clave, se deberá generar nuevas SAS asociadas a la clave modificada.
+\end{itemize}
+
+El siguiente programa Java obtiene un blob utilizando una URL de contenedor, a la que se ha agregado el nombre del blob. Una vez leído el blob, se despliega la longitud del blob:
+
+\begin{SourceCode}
+// Blob.java
+// Generado por ChatGPT. 2024
+// Modificado por Carlos Pineda G.
+
+import java.net.*;
+import java.io.*;
+
+public class Blob {
+  public static void main(String[] args) {
+// URL del blob con SAS
+String sasBlobUrl =
+"https://<cuenta-de-almacenamiento>.blob.core.windows.net/<nombre-del-contenedor>/<nombre-del-blob>?sp=<permisos>&st=<fecha-UTC-inicial>&se=<fecha-UTC-final>&spr=https&sv=2022-11-02&sr=<tipo de SAS>&sig=<SAS>";
+try {
+    // Crear una conexión HTTP GET a la URL del blob con SAS
+    URL url = new URL(sasBlobUrl);
+    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+    connection.setRequestMethod("GET");
+    // Obtener la respuesta
+    int responseCode = connection.getResponseCode();
+    // Verificar si la solicitud fue exitosa (código 200)
+    if (responseCode == HttpURLConnection.HTTP_OK) {
+        // Leer el contenido del blob
+        InputStream inputStream = connection.getInputStream();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[4096];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
+        // Convertir el contenido a un arreglo de bytes
+        byte[] blobBytes = outputStream.toByteArray();
+        // Mostrar la longitud del blob en bytes
+        System.out.println("Longitud del blob: " + blobBytes.length + " bytes");
+        // Cerrar los flujos de entrada y salida
+        outputStream.close();
+        inputStream.close();
+    } else {
+        System.out.println("Error al obtener el blob. Código de respuesta: " + responseCode);
+    }
+    // Cerrar la conexión
+    connection.disconnect();
+} catch (Exception e) {
+    System.err.println("Error al obtener el blob: " + e.getMessage());
+}
+}
+\end{SourceCode}
+
+\}
+
+\chapter{Actividades individuales a realizar}
+
+\section{Descarga y carga de una imagen administrada}
+
+En esta actividad, vamos a descargar una imagen administrada de Azure, cargarla nuevamente y crear una máquina virtual con la imagen cargada.
+
+Pre-requisitos:
+
+\begin{itemize}
+\item 30 GB en el disco duro de la computadora local (Linux).
+\item Azure CLI instalado en la computadora local (Linux).
+\end{itemize}
+
+\subsection{Descargar la imagen}
+
+\begin{SourceCode}
+1.Acceder a Azure desde la computadora local:
+
+az login
+
+2. Obtener el ID de la imagen:
+
+GRUPO_RECURSOS=<grupo-de-recursos>
+IMAGEN=<nombre-de-la-imagen>
+ID_IMAGEN=$(az image show -g "$GRUPO_RECURSOS" -n "$IMAGEN" --query id -o tsv)
+MAQUINA_VIRTUAL=<nombre-de-la-máquina-virtual-temporal>
+VHD=<nombre-de-la-máquina-virtual-temporal>.vhd
+
+3. Crear una máquina virtual temporal a partir de la imagen:
+
+az vm create -g "$GRUPO_RECURSOS" -n "$MAQUINA_VIRTUAL" --image "$ID_IMAGEN" --size Standard_B1s --public-ip-address "" --os-disk-delete-option Detach --admin-username <nombre-del-usuario> --generate-ssh-keys
+
+4. Obtener el ID del disco y el nombre del disco de sistema operativo:
+
+ID_DISCO=$(az vm show -g "$GRUPO_RECURSOS" -n "$MAQUINA_VIRTUAL" --query "storageProfile.osDisk.managedDisk.id" -o tsv)
+NOMBRE_DISCO=$(basename "$ID_DISCO")
+
+5. Eliminar la máquina virtual temporal (el disco de sistema operativo queda sin asignar):
+
+az vm delete -g "$GRUPO_RECURSOS" -n "$MAQUINA_VIRTUAL" --yes
+
+6. Generar una SAS para descargar el VHD con AzCopy:
+
+SAS=$(az disk grant-access -g "$GRUPO_RECURSOS" -n "$NOMBRE_DISCO" --access-level Read --duration-in-seconds 43200 -o tsv)
+
+O bien:
+
+SAS=$(az disk grant-access --resource-group "$GRUPO_RECURSOS" --name "$NOMBRE_DISCO" --access-level Read --duration-in-seconds 7200 --query accessSas -o tsv)
+
+7. Podemos ver la SAS generada:
+
+echo "$SAS"
+
+8. Instalar AzCopy en Ubuntu:
+
+curl -sL https://aka.ms/downloadazcopy-v10-linux | tar -xz
+sudo cp ./azcopy_linux_amd64_*/azcopy /usr/local/bin/
+
+9. Descargar la imagen del disco (notar que se ejecuta con sudo):
+
+sudo azcopy copy "$SAS" "$VHD"
+
+10. Revocar la SAS:
+
+az disk revoke-access -g "$GRUPO_RECURSOS" -n "$NOMBRE_DISCO"
+\end{SourceCode}
+
+\begin{enumerate}
+\item En el portal de Azure eliminar todos los recursos asociados a la máquina virtual temporal.
+\end{enumerate}
+
+\subsection{Cargar la imagen}
+
+1.Acceder a Azure desde la computadora local (Linux):
+
+\begin{SourceCode}
+az login
+
+2. Crear una cuenta de almacenamiento
+
+GRUPO_RECURSOS=<grupo-de-recursos>
+REGION="<región>" # p.e. "eastus2"
+CUENTA_ALMACENAMIENTO=<nombre-de-la-cuenta-de-almacenamiento>
+CONTENEDOR=<nombre-del-contenedor>
+VHD=<nombre-de-la-máquina-virtual-temporal>.vhd
+DISCO=<nombre-del-disco>
+IMAGEN=<nombre-de-la-imagen-restaurada>
+
+az storage account create -g "$GRUPO_RECURSOS" -n "$CUENTA_ALMACENAMIENTO" -l "$REGION" --sku Standard_LRS
+
+3. Crear un contenedor dentro de la cuenta de almacenamiento:
+
+az storage container create --account-name "$CUENTA_ALMACENAMIENTO" --account-key "$CLAVE_CUENTA_ALMACENAMIENTO" -n "$CONTENEDOR"
+
+4. Obtener la clave (KEY) de la cuenta de almacenamiento:
+
+CLAVE_CUENTA_ALMACENAMIENTO=$(az storage account keys list -g "$GRUPO_RECURSOS" -n "$CUENTA_ALMACENAMIENTO" --query [0].value -o tsv)
+
+5. Obtener la SAS para acceder al contenedor:
+
+SAS=$(az storage container generate-sas --account-name "$CUENTA_ALMACENAMIENTO" -n "$CONTENEDOR" --permissions acwl --expiry 2099-01-01T00:00Z --account-key "$CLAVE_CUENTA_ALMACENAMIENTO" -o tsv)
+
+6. Subir el VHD como blob al contenedor (ejecutar en el directorio donde está la imagen descargada):
+
+azcopy copy "$VHD" "https://$CUENTA_ALMACENAMIENTO.blob.core.windows.net/$CONTENEDOR/$VHD?$SAS"
+
+7. Crear el disco a partir del blob:
+
+az disk create -g "$GRUPO_RECURSOS" -n "$DISCO" --source "https://$CUENTA_ALMACENAMIENTO.blob.core.windows.net/$CONTENEDOR/$VHD" --hyper-v-generation V2 --os-type Linux -l "$REGION"
+
+8. Crear la imagen a partir del disco:
+
+ID_DISCO=$(az disk show -g "$GRUPO_RECURSOS" -n "$DISCO" --query id -o tsv)
+az image create -g "$GRUPO_RECURSOS" -n "$IMAGEN" --os-type Linux --source "$ID_DISCO" --hyper-v-generation V2 -l "$REGION"
+
+9. En el portal de Azure eliminar la cuenta de almacenamiento y el disco.
+
+10. Para verificar la imagen restaurada, crear una máquina virtual a partir de la imagen.
+
+Notar que al crear la máquina virtual a partir de la imagen restaurada se deberá ingresar el grupo de recursos, nombre de la máquina virtual, el tamaño, el tipo de autenticación, el tamaño del disco del SO, Tipo del disco del sistema operativo,
+las opciones de disponibilidad (p.e. "No se requiere redundancia de la infraestructura"), Red virtual, Subred, IP pública, Diagnóstico de arranque.
+\end{SourceCode}
+
+La región, el tipo de seguridad, la arquitectura de VM serán los mismos que la máquina virtual original.
+
+\section{Notas}
+
+\begin{itemize}
+\item El usuario de la nueva máquina virtual deberá ser el mismo de la máquina virtual original. Si se crea otro usuario y la imagen se creó conservando el usuario, entonces la máquina virtual tendrá dos usuarios, el usurio de la máquina virtual original y el usuario de la nueva máquina virtual.
+\item Es necesario crear las reglas de puerto que requieren los procesos que ejecutan en la máuinaq virtual (p.e. servidores).
+\item Si se accederá la máquina virtual utilizando un dominio, es necesario asocial el dominio a la dirección IP pública de la máquina virtual.
+\end{itemize}
+
+\clearpage
+
+% Fuente: ComponentesNube.md
+
+Interfaz de red
+
+Una interfaz de red (NIC, Network Interface Card) permite a una máquina virtual conectarse a la red virtual.
+
+Una máquina virtual puede tener una o más interfaces de red.
+
+Cada interfaz de red tiene al menos una configuración IP.
+
+Una configuración IP contiene una IP privada y opcionalmente una IP pública.
+
+A una configuración IP se le puede asociar una IP pública, la cual podrá ser utilizada por la máquina virtual para conectarse a Internet.
+
+Existen dos tipos de configuraciones IP: la "Principal" y las "Secundarias". Solo la IP pública de la configuración "Principal" es visible a Internet. La configuración "Principal" no se puede eliminar.
+
+Una interfaz de red se puede crear y posteriormente se puede agregar a una máquina virtual. Una IP pública también se puede crear y posteriormente se puede asociar a una configuración IP.
+
+Puerta de enlace de red virtual (VPN Gateway)
+
+Una puerta de enlace de red virtual (Virtual Network Gateway o VPN Gateway) es un Gateway implementado en software el cual permite conectar, mediante un canal encriptado, redes virtuales (VNet) entre sí o bien redes virtuales con redes on-premise.
+
+Para conectar dos redes virtuales se requiere crear dos puertas de enlace de red virtual (Virtual Network Gateway), una para cada red virtual a interconectar.
+
+A la conexión de dos redes virtuales se le conoce como VPN VNet-to-VNet.
+
+Fuente: Configure a VNet-to-VNet VPN gateway connection by using the Azure portal
+
+Por otra parte, para conectar una red on-premise con una red virtual (VNet) se requiere crear una puerta de enlace virtual para la red virtual y configurar un router en la red on-premise.
+
+A la conexión de una red on-premise a una red virtual se le conoce como VPN Site-to-Site o nube híbrida.
+
+Subred de puerta de enlace
+
+Antes de crear un VPN Gateway es necesario crear una subred de Gateway (Gateway subnet), esta subred contiene las direcciones IP que utilizarán las máquinas virtuales y servicios que implementarán el VPN Gateway.
+
+La subred de gateway debe llamarse "GatewaySubnet", este nombre le indica a Azure que se trata de la subred donde desplegará el VPN Gateway.
+
+Ver: About VPN Gateway configuration settings
+
+Emparejamiento de redes virtuales
+
+El emparejamiento (peering) de redes virtuales permite conectar redes virtuales utilizando la red interna de Microsoft, de manera que el tráfico de emparejamiento no pasa por Internet.
+
+No se cobra por crear el emparejamiento, pero sí se cobra el tráfico entrante y el tráfico saliente.
+
+En cuanto a los costos, el tráfico en la misma región (intra-región) es más barato que el tráfico entre diferentes regiones.
+
+El emparejamiento es más barato, más rápido y con mayor ancho de banda que VPN vnet-to-vnet.
+
+Al igual que una VPN vnet-to-vnet, los espacios de direcciones IP de las redes virtuales a emparejar no deben superponerse.
+
+\begin{enumerate}
+\item Crear una red virtual en una región, llamarla: vnet-1
+\item Crear una red virtual en otra región, llamarla: vnet-2
+\item Seleccionar la red virtual vnet-1.
+\item Seleccionar la opción "Emparejamientos" en la sección "Configuración".
+\item Dar clic en la opción "+Agregar".
+\item En la sección "Resumen de la red virtual remota":
+\end{enumerate}
+
+6.1 Ingresar el nombre del vínculo de emparejamiento remoto, llamarlo: emparejamiento-vnet-2 6.2 En el campo "Tipo de emparejamiento" seleccionar "Red virtual". 6.3 En el campo "Red virtual" seleccionar la red virtual vnet-2. 6.4 Habilitar "Permitir 'vnet-2' para acceder a 'vnet-1'".
+
+\begin{enumerate}
+\item En la sección "Resumen de la red virtual local":
+\end{enumerate}
+
+7.1 Ingresar el nombre del vínculo de emparejamiento local, llamarlo: emparejamiento-vnet-1 7.2 Habilitar "Permitir 'vnet-1' para acceder a 'vnet-2'".
+
+\begin{enumerate}
+\item Dar clic en el botón "Agregar".
+\end{enumerate}
+
+Modelo de red de Azure
+
+El siguiente diagrama de clases muestra la relación entre los diferentes componentes de una red virtual en Azure:
+
+Creación de una red virtual en Azure
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar "Redes virtuales" en el campo "Buscar recursos, servicios y documentos".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "+Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el grupo de recursos o crear uno nuevo.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la red virtual en el campo "Nombre de red virtual".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región donde se creará la red virtual (por ejemplo: East US)
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Direcciones IP".
+\end{enumerate}
+
+Por default aparece un intervalo de direcciones con una subred "default".
+
+\begin{enumerate}
+\item Para agregar más intervalos de direcciones escribir cada intervalo en notación CIDR en el campo que aparece abajo del último intervalo definido.
+\end{enumerate}
+
+\begin{enumerate}
+\item Para agregar una subred dar clic en "+Agregar una subred":
+\end{enumerate}
+
+9.1 Ingresar el nombre de la subred.
+
+9.2 Ingresar el intervalo de direcciones de la subred en formato CIDR, este intervalo debe estar dentro del espacio de direcciones.
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón Crear.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Ir al recurso" para ver la red virtual creada.
+\end{enumerate}
+
+Creación de un grupo de seguridad de red
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Grupos de seguridad de red".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "+Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Grupo de recursos" seleccionar el grupo de recursos donde se creará el grupo de seguridad de red o "Crear nuevo".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre del grupo de seguridad.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región. La región del NSG debe ser la misma que las subredes o interfaces de red (NIC) que se asociarán al NSG.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Ir al recurso".
+\end{enumerate}
+
+\begin{enumerate}
+\item Para agregar reglas de seguridad de entrada o de salida seleccionar las opciones "Reglas de seguridad de entrada" o "Reglas de seguridad de salida" en el menú "Configuración" en la parte izquierda de la pantalla.
+\end{enumerate}
+
+\section{Agregar una subred a una red virtual}
+
+\begin{enumerate}
+\item En la página de inicio buscar "Redes virtuales"
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la red virtual donde se creará la subred.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Subredes" en el menú "Configuración" que aparece a la izquierda de la pantalla.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "+Subred".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la subred.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el intervalo de direcciones IP de subred en notación CIDR.
+\end{enumerate}
+
+\begin{enumerate}
+\item Si se quiere asociar un grupo de seguridad de red (NSG) a la subred, seleccionarlo.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Guardar".
+\end{enumerate}
+
+Entonces se puede ejecutar ifconfig en la máquina virtual para ver las interfaces y las direcciones IP privadas correspondientes.
+
+\section{Creación de una máquina virtual y su conexión a una red virtual existente}
+
+Cuando se crea una máquina virtual se puede conectar a una subred de una red virtual existente.
+
+\begin{enumerate}
+\item Seleccionar el grupo de recursos o crear uno nuevo.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la misma región donde se creó la red virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la imagen, por ejemplo Ubuntu Server 20.04 LTS - x64 gen.2
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el tamaño, por ejemplo: Standard\_B1s
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo Tipo de autenticación seleccionar "Contraseña".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre del usuario y la contraseña.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Discos"
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el tipo de disco de sistema operativo:, por ejemplo: HDD estándar
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Redes".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la red virtual a la que se conectará la máquina virtual. Notar que sólo se puede seleccionar las redes virtuales que se encuentran en la misma región.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la subred a la que se conectará la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar una IP pública existente o "Ninguno" si no se requiere la IP pública. También se puede crear una nueva dirección IP pública seleccionando la opción "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Administración".
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Diagnóstico de arranque" seleccionar "Deshabilitar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Ir al recurso".
+\end{enumerate}
+
+\section{Creación de una interfaz de red}
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Interfaces de red".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "+Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el grupo de recursos.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la interfaz de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región donde se creará la interface de red. La región deberá ser la misma donde se creó la red virtual a la que se conectará la interface.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la red virtual a la que se conectará la interface de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la subred a la que se conectará la interface de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Asignación de la dirección IP privada" se puede seleccionar una IP dinámica o estática, si se selecciona IP estática se deberá ingresar una dirección IP estática.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el grupo de seguridad de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Ir al recurso".
+\end{enumerate}
+
+\begin{enumerate}
+\item Si se quiere asociar un NSG a la interface seleccionar la opción "Grupo de seguridad de red", seleccionar el NSG y dar clic en la opción "Guardar".
+\end{enumerate}
+
+\section{Añadir una interface de red a una máquina virtual}
+
+Para añadir (asociar) una interface de red a una máquina virtual:
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Máquinas virtuales".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Detener la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Redes" en el menú "Configuración" que aparece a la izquierda de la pantalla.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Adjuntar interfaz de red".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar una interfaz de red previamente creada.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Aceptar".
+\end{enumerate}
+
+\begin{enumerate}
+\item En la pantalla "Redes" se puede seleccionar la interface de red conectada.
+\end{enumerate}
+
+\section{Quitar una interface de red de una máquina virtual}
+
+Para quitar (desasociar) una interface de red de una máquina virtual:
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Máquinas virtuales".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Detener la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Redes" en el menú "Configuración" que aparece a la izquierda de la pantalla.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Desasociar interfaz de red".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la interface de red a desconectar (desasociar).
+\end{enumerate}
+
+\section{Agregar una configuración IP a una interface de red}
+
+\begin{enumerate}
+\item Buscar "Interfaces de red" en la barra e búsqueda en la pantalla de inicio de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la interfaz de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Configuraciones de IP".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en +"Agregar"
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la configuración IP.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el tipo de asignación de la IP privada: dinámica o estática.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Asociar" si se quiere asociar una IP pública a la configuración. Notar que solo la IP pública de la configuración "Principal" es visible a Internet.
+\end{enumerate}
+
+Dando clic a los tres puntos que se encuentran a la derecha de una configuración se puede eliminar la configuración. La configuración "Principal" no se puede eliminar.
+
+\section{Agregar una IP pública a una máquina virtual}
+
+Para agregar una IP pública a una máquina virtual, es necesario asignar (asociar) la IP pública a la configuración IP principal de la interface de red de la máquina virtual.
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Máquinas virtuales".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Redes" en el menú "Configuración" que aparece a la izquierda de la pantalla.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la interfaz de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Configuraciones de IP".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la configuración IP a la que se le asignará la IP pública.
+\end{enumerate}
+
+\begin{enumerate}
+\item Checar el campo "Asociar dirección IP pública"
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Dirección IP pública" seleccionar la IP pública o crear una nueva.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic al botón "Guardar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Cerrar la ventana.
+\end{enumerate}
+
+\section{Quitar una IP pública a una máquina virtual}
+
+Para quitar la IP pública a una máquina virtual, es necesario desasociar la IP pública de la configuración IP principal de la interface de red de la máquina virtual.
+
+\begin{enumerate}
+\item En la página de inicio de Azure buscar "Máquinas virtuales".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la máquina virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la opción "Redes" en el menú "Configuración" que aparece a la izquierda de la pantalla.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la interfaz de red.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Configuraciones de IP".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la configuración IP a la que se le asignará la IP pública.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Asociar dirección IP pública" quitar el checado.
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic al botón "Guardar".
+\end{enumerate}
+
+\begin{enumerate}
+\item Cerrar la ventana.
+\end{enumerate}
+
+\section{Creación de una Puerta de enlace de red virtual (VPN Gateway)}
+
+\begin{enumerate}
+\item Acceder al portal de Azure.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Crear un recurso".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Puerta de enlace de red virtual".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre del gateway. Notar que el grupo de recursos es el mismo que el grupo de recursos donde está la red virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Tipo de puerta de enlace" seleccionar "VPN".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el SKU "VpnGw2AZ".
+\end{enumerate}
+
+\begin{enumerate}
+\item EN el campo "Generación" seleccionar "Generation2".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la red virtual a la que se conectará el gateway (notar que solo aparecen en la lista las redes virtuales creadas en la misma región).
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Intervalo de direcciones de subred de puerta de enlace" (o el campo "subred") se muestra automáticamente un intervalo correspondiente a la "GatewaySubnet"
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "Crear" una dirección IP o "Usar existente". Si se va a crear una IP pública ingresar el nombre. Notar que el gateway requiere una dirección IP pública para recibir la conexión de otro gateway.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el campo "Habilitar el modo activo/activo" seleccionar "Deshabilitado".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+Nota. "Setting up a virtual network is free of charge. However, we do charge for the VPN gateway that connects to on-premises and other virtual networks in Azure. This charge is based on the amount of time that gateway is provisioned and available".
+
+Fuente: \url{https://azure.microsoft.com/en-gb/pricing/details/vpn-gateway}
+
+\section{Creación de una VPN VNet-to-VNet}
+
+\begin{enumerate}
+\item Crear dos redes virtuales en dos regiones diferentes (p.e. East US y West US):
+\end{enumerate}
+
+\begin{itemize}
+\item Se deberá crear en cada red virtual una subred llamada "GatewaySubnet". Esta subred será utilizada por las máquinas virtuales que aprovisiona Azure para ejecutar el Gateway. Para crear la subred "GatewaySubnet" al momento de crear la red virtual:
+\end{itemize}
+
+\begin{itemize}
+\item Seleccionar la opción "Agregar una subred" en la ventana "Direcciones IP".
+\item En el campo "Propósito de la subred" seleccionar "Virtual Network Gateway".
+\item En el campo "Dirección inicial" ingresar la dirección IP inicial del intervalo de direcciones IP que define la subred.
+\item En el campo "Tamaño" seleccionar el tamaño del intervalo de direcciones IP de la subred.
+\item Dar clic en el botón "Agregar".
+\end{itemize}
+
+\begin{itemize}
+\item Cada red virtual en un grupo de recursos diferente.
+\item Las dos redes virtuales no deberán tener direcciones IP en común (e.d. cada red virtual deberá tener sus espacios de direcciones diferentes).
+\end{itemize}
+
+\begin{enumerate}
+\item Crear dos puertas de enlace de red virtual (Virtual Network Gateway), una para cada red virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el cuadro de búsqueda del portal de Azure buscar "Redes virtuales".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la primera red virtual a conectar.
+\end{enumerate}
+
+\begin{enumerate}
+\item En el menú "Configuración" que aparece en la parte izquierda de la pantalla seleccionar "Dispositivos conectados" (en la lista aparecen los dispositivos conectados a la red virtual, p.e. interfaces de red virtual, Gateways, etc.).
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el Gateway conectado a la red virtual.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ahora vamos a crear una conexión de la primera red a la segunda red y una conexión de la segunda red a la primera red. En el menú "Configuración" que aparece en la parte izquierda de la pantalla seleccionar "Conexiones".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar "+Agregar" para agregar una nueva conexión.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el tipo de conexión: "De VNet a VNet".
+\end{enumerate}
+
+\begin{enumerate}
+\item Checar el campo "Establecer conectividad bidireccional" (debido a que las conexiones son unidireccionales, al indicar conectividad bidireccional se van a crear dos conexiones de manera que el tráfico pueda ir del primer Gateway al segundo Gateway y viceversa.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la primera conexión.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar el nombre de la segunda conexión.
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la región donde se encuentra la primera red virtual a conectar (seleccionada en el paso 3).
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar la pestaña "Opciones".
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el primer Gateway (la puerta de enlace virtual seleccionada en el paso 5).
+\end{enumerate}
+
+\begin{enumerate}
+\item Seleccionar el segundo Gateway (la puerta de enlace virtual que estará en el otro extremo de la VPN).
+\end{enumerate}
+
+\begin{enumerate}
+\item Ingresar una clave compartida para el encriptado de la conexión (letras y números).
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Revisar y crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+\begin{enumerate}
+\item Para ver el estado de las conexiones, seleccionar ingresar "Todos los recursos" en el cuadro de búsqueda de recursos. Seleccionar la primera conexión (el nombre que se ingresó en el paso 11). El estado deberá ser "Conectado". De igual manera se puede verificar el estado de la segunda conexión.
+\end{enumerate}
+
+En general una VPN no se encuentra en estado "conectado" mientras no inicie la transmisión de tráfico.
+
+\begin{enumerate}
+\item Ahora se puede crear una maquina virtual en la primera VNet y otra máquina virtual en la segunda VNet. Entonces se puede hacer "ping" de la primera máquina virtual a la segunda y viceversa utilizando las direcciones IP privadas de las máquinas virtuales.
+\end{enumerate}
+
+Las máquinas virtuales no responden al "ping" cuando se realiza a través de IP públicas.
+
+Nota. Para eliminar los Gateways es necesario eliminar primero las conexiones.
+
+\clearpage
+
+% Fuente: DataWarehouse.md
+
+\chapter{OLAP - Online Analytical Processing}
+
+En el área de Inteligencia de Negocios o Business Intelligence (BI), un sistema de procesamiento analítico en línea (OLAP), es una tecnología que permite realizar análisis multidimensional de grandes volúmenes de datos de manera rápida y eficiente.
+
+Los datos utilizados para el análisis mutidimensional, se almacenan en un almacén de datos empresarial (data warehouse), o un almacén de datos departamental (data mart).
+
+\section{Data warehouse}
+
+Un data warehouse es un almacén de datos con una estructura multidimensional, ya que las métricas (indicadores) de negocio, como serían las ventas, se guardan en tablas llamadas tablas de hechos (fact tables) relacionadas con diversas dimensiones, como serían la geografía, el tiempo, los productos, los clientes, los empleados, entre otras.
+
+Las dimensiones pueden dividirse en diferentes niveles jerárquicos, por ejemplo, una dimensión geográfica puede tener los siguientes niveles jerárquicos: colonia, municipio, estado, país y región. Una dimensión temporal podría tener los siguientes niveles jerárquicos: fecha, día de la semana, mes, trimestre, semestre y año.
+
+Una dimensión de producto podría tener los niveles jerárquicos: producto y categoría.
+
+Los datos en un data warehouse se pueden estructurar en dos tipos de modelos E-R: estrella (star) y copo de nieve (snowflake).
+
+\subsection{Modelo estrella}
+
+En el esquema estrella la fact table se enlaza con cada tabla de dimensión.
+
+La fact table contiene las métricas (p.e. las ventas), y las llaves foráneas que enlazan la fact table con las tablas de dimensiones.
+
+Cada tabla de dimensión contiene una llave primaria y una descripción.
+
+Por ejemplo, la tabla correspondiente a la dimensión "producto", incluye la llave primaria del producto y el nombre del producto.
+
+La tabla correspondiente a la dimensión "categoría" (categoría de producto), incluye la llave primaria de la categoría y el nombre de la categoría.
+
+En este caso, "producto" y "categoría" son dos niveles jerárquicos de una misma dimensión.
+
+En un esquema estrella todas las tablas de dimensiones se enlazan con la fact table.
+
+Consideremos el siguiente esquema estrella:
+
+En este caso, la fact table contiene los registros correspondientes a las ventas.
+
+Las tablas employee, category, product, order\_date, customer y country se enlazan directamente a la tabla fact table.
+
+\section{Modelo copo de nieve}
+
+En el esquema copo de nieve (snowflake), la fact table se enlaza con las tablas correspondientes al primer nivel jerárquico de cada dimensión.
+
+Al igual que en el modelo estrella, en el modelo copo de nieve la fact table contiene las métricas (p.e. las ventas).
+
+Las llaves foráneas en la fact table, enlazan la fact table con las tablas correspondientes al primer nivel jerárquico de cada dimensión.
+
+Si una dimensión tiene varios niveles jerárquicos, cada nivel jerárquico será una tabla de dimensión incluyendo una llave primaria y descripción, y una llave foránea que enlaza la tabla con la tabla correspondiente al nivel jerárquico superior, si lo hay.
+
+Consideremos el siguiente esquema copo de nieve:
+
+En este caso, la fact table contiene los registros correspondientes a las ventas.
+
+Las tablas employee, product, order\_date, customer y country se enlazan directamente a la tabla fact table.
+
+La tabla product se enlaza con la tabla category, debido a que product y category son dos niveles jerárquicos de la dimensión "producto".
+
+Una ventaja del modelo copo de nieve comparado con el modelo estrella, es que en el modelo copo de nieve los datos ocupan menos espacio en disco, sin embargo, las consultas en éste modelo requieren enlazar más tablas, lo que hace las consultas mucho más lentas.
+
+En realidad, el espacio en disco que ahorra el modelo copo de nieve es poco, debido a que solo se ahorra el espacio ocupado por llaves foráneas en la fact table; por otra parte, las consultas son más rápidas en el modelo estrella.
+
+Desde luego, un modelo normalizado, como es el caso del modelo copo de nieve, garantiza una mayor calidad en los datos. Considerando que los datos de la base de dato multidimensional son extraídos de una base de datos transaccional, la calidad de los datos la debería garantizar la base de datos transaccional, no la base de datos multidimensional.
+
+\section{ROLAP}
+
+Los modelos estrella y copo de nieve anteriores son modelos Entidad-Relación para una base de datos relacional.
+
+A un sistema de procesamiento analítico en línea sobre una base de datos relacional, se conoce como ROLAP o Relational Online Analytical Processing.
+
+Los sistemas ROLAP tiene las siguientes ventajas:
+
+Permiten a las empresas aprovechar su DBMS relacional, sin la necesidad de una inversión adicional en otro tipo de tecnología OLAP. Escalan a grandes volúmenes de datos. El modelado de datos es flexible, a medida que se requieren más métricas, dimensiones, o niveles jerárquicos en las dimensiones, se pueden agregar sin un impacto mayor en el modelo existente. El desempeño se puede aumentar creando tablas agregadas. SQL permite realizar consultas complejas de acuerdo a las necesidades de la empresa.
+
+\section{Cubo OLAP}
+
+Un cubo OLAP es el resultado de una consulta a la base de datos mutidimensional. En un sistema ROLAP, un cubo es el resultado de ejecutar una instrucción SELECT.
+
+Por ejemplo, si consideramos el modelo copo de nieve que vimos anteriormente, podemos obtener un cubo OLAP que incluya las ventas acumuladas para las dimensiones country, category y customer:
+
+Entonces, el cubo OLAP se puede obtener ejecutando la siguiente instrucción SELECT:
+
+\begin{SourceCode}
+SELECT a.country,b.category,c.customer,sum(e.sales)
+FROM country a,category b,customer c,product d,fact_table e
+WHERE e.id_country=a.id_country and e.id_product=d.id_product
+and d.id_category=b.id_category and e.id_customer=c.id_customer
+GROUP BY 1,2,3
+ORDER BY 1,2,3;
+\end{SourceCode}
+
+Nota. En las versiones recientes de Excel, a los cubos de datos se les llama tablas dinámicas.
+
+\clearpage
+
+% Fuente: Files.md
+
+\chapter{Azure Files}
+
+Azure Files es un servicio administrado de archivos compartidos en la nube, los cuales se pueden acceder mediante el protocolo SMB (Server Message Block).
+
+Para utilizar Azure Files, se debe crear una cuenta de almacenamiento, y dentro de ésta, se podrán crear recursos compartidos de archivos; para cada recurso compartido de archivos se podrá configurar una capacidad entre 100 GB y 100 TB.
+
+Los recursos compartidos de archivos funcionan como filesystems sin servidor (serverless), y pueden montarse simultáneamente en Linux, Windows y MacOS.
+
+Debido a que Azure Files no soporta el encriptado sobre el protocolo NFS, la seguridad en la transferencia se basa en la seguridad de la red virtual, por tanto, NFS solo puede utilizarse dentro de una red virtual de Azure.
+
+SMB puede utilizarse fuera de la red virtual.
+
+Para acceder los recursos compartidos de archivos, además de los protocolos SMB y NFS, también es posible utilizar APIs para .NET, Java, Python, JavaScript, C++, y Go, o bien, la API REST de Azure Files.
+
+Reproducir Vídeo
+
+Recurso compartido de archivos mediante SMB
+
+Crear una cuenta de almacenamiento
+
+\begin{enumerate}
+\item Ingresar al portal de Azure.
+\item En el campo de búsqueda escribir "Cuentas de almacenamiento".
+\item Seleccionar "+Crear".
+\item Seleccionar un grupo de recursos o crear uno nuevo.
+\item Ingresar en nombre de la cuenta de almacenamiento. El nombre debe ser único en Azure, de 3 a 24 caracteres (letras minúsculas y dígitos).
+\item Seleccionar la región.
+\item En el campo "Servicio principal" seleccionar "Azure Files".
+\item En el campo "Rendimiento" seleccionar "Prémium". Esta selección no se puede cambiar después de crear la cuenta de almacenamiento.
+\item En el campo "Redundancia" seleccionar "Almacenamiento con redundancia local (LRS)".
+\item Dar clic en el botón "Revisar y crear".
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+Agregar un recurso compartido de archivos
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar la opción "Recursos compartidos de archivos".
+\item Seleccionar "+Recurso compartido de archivos".
+\item Ingresar el nombre del recurso compartido de archivos.
+\item Ingresar la capacidad aprovisionada (entre 100 y 102400 GB).
+\item En la sección "Backup" se puede deshabilitar la opción "Habilitar copia de respaldo".
+\item Dar clic en el botón "Revisar+crear".
+\item Dar clic en el botón "Crear".
+\end{enumerate}
+
+Crear una conexión al recurso compartido de archivos
+
+\begin{enumerate}
+\item Seleccionar la cuenta de almacenamiento.
+\item Seleccionar la opción "Recursos compartidos de archivos".
+\item Seleccionar el recurso compartido de archivos.
+\item Dar clic en la opción "Conectar".
+\item Seleccionar "Linux".
+\item Dar clic en el botón "Mostrar script".
+\item Copiar el script.
+\end{enumerate}
+
+Montar el recurso compartido de archivos en una máquina virtual con Ubuntu
+
+\begin{enumerate}
+\item Crear una máquina virtual con Ubuntu.
+\item Ejecutar el script obtenido anteriormente.
+\end{enumerate}
+
+Notar que el script crea un directorio el cual será el punto de montaje, p.e. /media/<recurso-compartido-de-archivos>
+
+\begin{enumerate}
+\item Para ver el archivo en Azure:
+\end{enumerate}
+
+3.1 Seleccionar la cuenta de almacenamiento. 3.2 Seleccionar la opción "Recursos compartidos de archivos". 3.3 Seleccionar el recurso compartido de archivos. 3.4 Seleccionar la opción "Examinar".
+
+\begin{enumerate}
+\item Puede cargar un archivo directamente en Azure:
+\end{enumerate}
+
+4.1 Seleccionar la cuenta de almacenamiento. 4.2 Seleccionar la opción "Recursos compartidos de archivos". 4.3 Seleccionar el recurso compartido de archivos. 4.4 Seleccionar la opción "Examinar". 4.5 Seleccionar "Cargar". 4.6 Seleccionar "Buscar archivos". 4.7 Seleccionar el archivo en la ventana. 4.8 Dar clic en el botón "Cargar". 4.9 En la máquina virtual se puede ver que el archivo se encuentra en el directorio punto de montaje /media/<recurso-compartido-de-archivos>
+
+Donde <recurso-compartido-de-archivos> es el nombre del recurso compartido de archivos.
+
+Notas.
+
+\begin{itemize}
+\item Antes de ejecutar el script es recomendable borrar las credenciales anteriores (si ya se había montado un recurso compartido de archivos previamente): /etc/smbcredentials/<cuenta-de-almacenamiento>.cred
+\item Para desmontar el recurso compartido de archivos se deberá ejecutar: sudo umount /media/<recurso-compartido-de-archivos>
+\item Para volver a montar el recurso compartido de archivos es necesario ejecutar nuevamente el script (comentando la línea donde se crea el directorio).
+\end{itemize}
+
+\clearpage
+
+% Fuente: NFS.md
+
+\chapter{El sistema de archivos distribuidos NFS}
+
+El sistema de archivos NFS (Network File System) permite que una computadora (cliente) tenga acceso de manera transparente a los archivos contenidos en un servidor remoto.
+
+Utilizando NFS, la computadora cliente puede montar un sistema de archivos remoto, por tanto, es posible desde el cliente, crear, borrar, leer y escribir archivos que se encuentran "físicamente" en el servidor.
+
+NFS se implementa mediante una arquitectura cliente-servidor.
+
+Cuando la computadora cliente monta el sistema de archivos remoto, el cliente NFS se conecta al servidor NFS, entonces el cliente podrá acceder a los archivos en el sistema de archivos remoto, utilizando el protocolo NFS a través del puerto default 2049.
+
+\section{Instalación de NFS en el servidor}
+
+\begin{enumerate}
+\item Para instalar NFS en el servidor se ejecutan los siguientes comandos:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo apt update
+sudo apt install nfs-kernel-server
+\end{SourceCode}
+
+\begin{enumerate}
+\item Crear el directorio (punto de montaje) que va a compartir el servidor con los clientes:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir /var/nfs -p
+\end{SourceCode}
+
+La opción -p indica que se deberán crear todos los directorios en la ruta si no existen.
+
+\begin{enumerate}
+\item El propietario del directorio /var/nfs es root debido a que este directorio se creó con sudo. Podemos ver el propietario del directorio /var/nfs ejecutando el comando:
+\end{enumerate}
+
+\begin{SourceCode}
+ls -l /var
+\end{SourceCode}
+
+\begin{enumerate}
+\item Debido a que NFS convierte el acceso del usuario root en el cliente en un acceso con el usuario "nobody:nogroup" en el servidor, es necesario cambiar el propietario y permisos del directorio creado anteriormente:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo chown nobody:nogroup /var/nfs
+sudo chmod 777 /var/nfs
+\end{SourceCode}
+
+\begin{enumerate}
+\item Podemos verificar el nuevo propietario:
+\end{enumerate}
+
+\begin{SourceCode}
+ls -l /var
+\end{SourceCode}
+
+\begin{enumerate}
+\item Ahora se debe registrar el directorio creado en el archivo de configuración de NFS.
+\end{enumerate}
+
+6.1 Editar el archivo /etc/exports:
+
+\begin{SourceCode}
+sudo vi /etc/exports
+\end{SourceCode}
+
+6.2 Agregar la siguiente línea, guardar y salir del editor (en este caso 40.76.45.28 es la IP del cliente):
+
+\begin{SourceCode}
+/var/nfs 40.76.45.28(insecure,rw,sync,no_subtree_check)
+\end{SourceCode}
+
+La opción "insecure" permite que NFS use un puerto "inseguro", es decir, un puerto mayor o igual a 1024, ya que los puertos por debajo de 1024 solo pueden ser abiertos con permisos de administrador. En este caso usaremos el puerto 2049 el cual es el puerto estándar para NFS.
+
+\subsection{Notas de seguridad.}
+
+\begin{itemize}
+\item Debido a que los atacantes saben que el puerto 2049 es el puerto utilizado para NFS, es recomendable utilizar otro puerto.
+\item Se recomienda utilizar la versión 4 de NFS la cual implementa el protocolo de autenticación Kerberos (autenticación mutua entre el cliente y el servidor) así como el encriptado mediante TLS o IPsec, sin embargo, la versión 4 puede resultar más lenta que la versión 3.
+\item Es importante configurar el NSG del servidor para que solo acepte conexiones desde las direcciones IP de clientes de confianza.
+\end{itemize}
+
+La opción "rw" permite la lectura y escritura.
+
+La opción "sync" hace que las modificaciones realizadas por el cliente sobre los archivos se escriban en el disco del servidor. Por otra parte, la opción "async" no escribe los cambios en el disco, lo que puede ocasionar que los cambios se pierdan en caso de una caída del servidor.
+
+\begin{SourceCode}
+La opción "no_subtree_check" deshabilita la verificación de que el archivo que accede el cliente esté en el árbol de directorios exportado. Esta verificación causa problemas si el archivo es renombrado cuando el cliente lo tiene abierto. En general la opción "subtree_check" se utiliza para sistemas de archivos donde no se renombran los archivos y la opción "no_subtree_check" se utiliza para sistemas de archivos donde se realizará renombramiento de archivos.
+\end{SourceCode}
+
+Para una descripción de los permisos se puede consultar Understanding the /etc/exports File y exports linux page.
+
+6.3 Actualizar la tabla de file systems exportados por NFS:
+
+\begin{SourceCode}
+sudo exportfs -ra
+\end{SourceCode}
+
+6.4 Para ver los file systems exportados por NFS:
+
+\begin{SourceCode}
+sudo exportfs
+\end{SourceCode}
+
+6.5 Para activar la nueva configuración, se requiere reiniciar el servidor NFS:
+
+\begin{SourceCode}
+sudo systemctl restart nfs-kernel-server
+\end{SourceCode}
+
+\begin{enumerate}
+\item Ahora debemos abrir el puerto de entrada 2049 utilizando el portal de Azure:
+\end{enumerate}
+
+\begin{SourceCode}
+Intervalos de puertos de destino: 2049
+Protocolo: TCP
+Nombre: puerto_nfs
+\end{SourceCode}
+
+\section{Instalación de NFS en el cliente}
+
+\begin{enumerate}
+\item Para instalar NFS en el cliente se ejecutan los siguientes comandos:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo apt update
+sudo apt install nfs-common
+\end{SourceCode}
+
+\begin{enumerate}
+\item Crear el directorio (punto de montaje) en el cliente. el cual será "espejo" del punto de montaje del servidor:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir -p /nfs
+\end{SourceCode}
+
+\begin{enumerate}
+\item Montar el directorio remoto /var/nfs (en este caso 40.87.94.140 es la IP del servidor):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mount -v -t nfs 40.87.94.140:/var/nfs /nfs
+\end{SourceCode}
+
+\begin{enumerate}
+\item Para desmontar el directorio /nfs:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo umount /nfs
+\end{SourceCode}
+
+\section{Probar el acceso a archivos remotos}
+
+\begin{enumerate}
+\item En el servidor crear un archivo, en este caso utilizamos el editor vi:
+\end{enumerate}
+
+\begin{SourceCode}
+vi /var/nfs/texto.txt
+\end{SourceCode}
+
+\begin{enumerate}
+\item Escribir un texto (como el siguiente) guardar y salir de la edición:
+\end{enumerate}
+
+\begin{SourceCode}
+Esta es una prueba
+\end{SourceCode}
+
+\begin{enumerate}
+\item En el cliente editar el archivo /nfs/texto.txt:
+\end{enumerate}
+
+\begin{SourceCode}
+vi /nfs/texto.txt
+\end{SourceCode}
+
+\begin{enumerate}
+\item Agregar la siguiente línea, guardar y salir de la edición:
+\end{enumerate}
+
+\begin{SourceCode}
+Esta es otra prueba
+\end{SourceCode}
+
+\begin{enumerate}
+\item En el servidor desplegar el contenido del archivo /var/nfs/texto.txt:
+\end{enumerate}
+
+\begin{SourceCode}
+more /var/nfs/texto.txt
+\end{SourceCode}
+
+\begin{enumerate}
+\item En el cliente desplegar el contenido del directorio /nfs:
+\end{enumerate}
+
+\begin{SourceCode}
+ls -l /nfs
+\end{SourceCode}
+
+\section{Referencia}
+
+Sistemas de archivos de red
+
+\chapter{NFS sobre un túnel SSH}
+
+Las versiones de NFS anteriores a la versión 4 no utilizan un canal seguro para autenticar y encriptar la comunicación, por esta razón cuando se utiliza NFS fuera de una red segura es necesario implementarlo sobre un túnel SSH.
+
+Cuando habilitamos el túnel SSH para comunicar el cliente NFS con el servidor NFS, el cliente NFS se conecta localmente al cliente SSH (el cliente SSH hace las veces de servidor de NFS); entonces el cliente SSH envía los datos al servidor SSH, el cual a su vez redirige los datos al servidor de NFS (el servidor SSH hace las veces de cliente del servidor de NFS).
+
+Debido a que el túnel SSH permite mapear los puertos, el cliente NFS se puede conectar al cliente SSH a través de un puerto diferente, al puerto que utiliza el servidor SSH para conectarse al servidor NFS. El mapeo de puertos es de utilidad cuando el puerto estándar 2049 está ocupado.
+
+En la siguiente arquitectura podemos ver que el cliente NFS se conecta al cliente SSH, a través del puerto 3049, mientras que el servidor SSH se conecta al servidor NFS en localhost, a través del puerto 2049:
+
+\section{Instalación de NFS seguro en el servidor}
+
+\begin{enumerate}
+\item Para instalar NFS en el servidor se ejecutan los siguientes comandos:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo apt install portmap
+\end{SourceCode}
+
+\begin{enumerate}
+\item Crear el directorio compartido en el servidor;
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir /var/nfs -p
+\end{SourceCode}
+
+\begin{enumerate}
+\item El propietario del directorio /var/nfs es root debido a que este directorio se creó con sudo. Podemos ver el propietario del directorio /var/nfs ejecutando el comando:
+\end{enumerate}
+
+\begin{SourceCode}
+ls -l /var
+\end{SourceCode}
+
+\begin{enumerate}
+\item Debido a que NFS convierte el acceso del usuario root en el cliente en un acceso con el usuario "nobody:nogroup" en el servidor, es necesario cambiar el propietario y permisos del directorio creado anteriormente:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo chown nobody:nogroup /var/nfs
+sudo chmod 777 /var/nfs
+\end{SourceCode}
+
+\begin{enumerate}
+\item Podemos verificar el nuevo propietario:
+\end{enumerate}
+
+\begin{SourceCode}
+ls -l /var
+\end{SourceCode}
+
+\begin{enumerate}
+\item Ahora se debe registrar el directorio creado en el archivo de configuración de NFS.
+\end{enumerate}
+
+6.1 Editar el archivo /etc/exports:
+
+\begin{SourceCode}
+sudo vi /etc/exports
+\end{SourceCode}
+
+6.2 Agregar la siguiente línea, guardar y salir del editor:
+
+\begin{SourceCode}
+/var/nfs localhost(insecure,rw,sync,no_subtree_check)
+\end{SourceCode}
+
+Notar que el servidor aceptará conexiones del servidor SSH el cual actúa como cliente de NFS.
+
+6.3 Actualizar la tabla de file systems exportados por NFS:
+
+\begin{SourceCode}
+sudo exportfs -ra
+\end{SourceCode}
+
+6.4 Para ver los file systems exportados por NFS:
+
+\begin{SourceCode}
+sudo exportfs
+\end{SourceCode}
+
+6.5 Para activar la nueva configuración, se requiere reiniciar el servidor NFS:
+
+\begin{SourceCode}
+sudo systemctl restart nfs-kernel-server
+\end{SourceCode}
+
+Notar que en este caso no se abrirá el puerto de entrada 2049 en el servidor.
+
+Nota de seguridad. Es recomendable configurar el NSG del servidor para que solo acepte conexiones SSH desde las direcciones IP de clientes de confianza.
+
+\section{Instalación de NFS seguro en el cliente}
+
+\begin{enumerate}
+\item Para instalar NFS en el cliente se ejecutan los siguientes comandos:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo apt update
+sudo apt install nfs-common
+sudo apt install portmap
+\end{SourceCode}
+
+\begin{enumerate}
+\item Crear el directorio de montaje en el cliente (punto de montaje):
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mkdir -p /nfs
+\end{SourceCode}
+
+\begin{enumerate}
+\item Para crear un túnel SSH entre cliente y el servidor se ejecuta el siguiente comando:
+\end{enumerate}
+
+\begin{SourceCode}
+ssh -fNv -L 3049:localhost:2049 ubuntu@40.84.237.35
+\end{SourceCode}
+
+En este caso, a manera de ejemplo, estamos mapeando el puerto 3049 al puerto 2049, es decir, el cliente NFS se conectará al cliente SSH (el cual hace las veces de servidor NFS) a través del puerto 3049, y el servidor SSH (el cual hace las veces de cliente NFS) se conectará al servidor NFS a través del puerto 2049.
+
+\begin{SourceCode}
+Aquí "ubuntu" es un usuario en el servidor y "40.84.237.35" es la dirección IP del servidor.
+\end{SourceCode}
+
+\begin{enumerate}
+\item Montar el directorio remoto:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo mount -t nfs -o port=3049 localhost:/var/nfs /nfs
+\end{SourceCode}
+
+Debido a que el puente SSH mapeará el puerto 3049 al puerto 2049, es necesario indicar el puerto al que se conectará el cliente NFS, en este caso el puerto 3049.
+
+\begin{enumerate}
+\item Para desmontar el directorio /nfs:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo umount /nfs
+\end{SourceCode}
+
+Nota. El uso de NFS sobre túnel SSH está indicado cuando la comunicación entre el cliente NFS y el servidor NFS cruza Internet, sin embargo, cuando el cliente NFS y el servidor NFS se encuentran ambos en una red segura (VNet), no es necesario utilizar el túnel SSH, toda vez que el encriptado incrementa la latencia en la comunicación.
+
+\clearpage
+
+% Fuente: RedesVirtuales.md
+
+\chapter{Clases de direcciones IP v4}
+
+Las direcciones IP versión 4 se dividen en cinco clases o rangos, a saber:
+
+\begin{itemize}
+\item Clase A
+\item Clase B
+\item Clase C
+\item Clase D
+\item Clase E
+\end{itemize}
+
+Cada clase se define por un rango de valores que puede tomar el primer byte de la dirección IP, así las clases A, B y C son utilizadas para la comunicación unicast, mientras que la clase D es utilizada exclusivamente para la comunicación multicast.
+
+La clase E está reservada para propósitos experimentales.
+
+La siguiente tabla muestra los bytes que identifican a las redes y a los hosts en cada clase (Rango del primer byte), así como la máscara de subred, número de redes y número de hosts por red en cada clase.
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{|X|X|X|X|X|X|}
+\hline
+Clase & Rango del primer byte & Identificador de red y host & Máscara de subred & Número de subredes & Número de hosts por subred \\ \hline
+A & 1 - 126 & R.H.H.H & 255.0.0.0 & 126 & 16,777,214 \\ \hline
+B & 128 - 191 & R.R.H.H & 255.255.0.0 & 16,382 & 65,534 \\ \hline
+C & 192 - 223 & R.R.R.H & 255.255.255.0 & 2,097,150 & 254 \\ \hline
+D & 224 – 239 & — & — & — & — \\ \hline
+E & 240 – 255 & — & — & — & — \\ \hline
+\end{tabularx}
+\end{center}
+
+Referencia: Explicación de las cantidades de hosts y subredes (Cisco)
+
+Las direcciones 127.X.X.X (loopback address) son utilizadas para identificar a la computadora local (localhost).
+
+La dirección 255.255.255.255 es usada para broadcast a todos los hosts en la LAN. Las direcciones 224.0.0.1 y 224.0.0.255 están reservadas.
+
+Las direcciones de clase A son utilizadas por algunos gobiernos y por proveedores de nube (p.e. Microsoft Azure) ¿Qué dirección IP está asociada al dominio m4gm.com?
+
+Las direcciones de clase B son utilizadas por empresas e instituciones públicas de tamaño medio (como sería el caso del IPN) las cuales podrían requerir más de 254 direcciones públicas.
+
+Las direcciones de clase C son usadas por empresas e instituciones públicas que no requieren muchas direcciones IP públicas.
+
+La clase D a su vez, se divide en los siguientes intervalos de direcciones IP de acuerdo a su uso:
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{|X|X|X|}
+\hline
+Dirección inicial & Dirección final & Uso \\ \hline
+224.0.0.0 & 224.0.0.255 & Direcciones reservadas para control de tráfico en una red local (p.e. enrutamiento) \\ \hline
+224.0.1.0 & 224.0.1.255 & Direcciones para multicast global, se enrutan a través de Internet \\ \hline
+224.0.2.0 & 224.0.255.255 & Direcciones reservadas para uso futuro \\ \hline
+224.1.0.0 & 238.255.255.255 & Direcciones disponibles para aplicaciones multicast \\ \hline
+239.0.0.0 & 239.255.255.255 & Direcciones para multicast local; no se enrutan en Internet \\ \hline
+\end{tabularx}
+\end{center}
+
+Referencia: RFC5771: IANA Guidelines for IPv4 Multicast Address Assignments
+
+\section{Classless Inter-Domain Routing (CIDR)}
+
+Como vimos anteriormente, las direcciones IP se agrupan en cinco clases, sin embargo, esta clasificación tiene un inconveniente, que muchas direcciones IP se desperdician debido a que solo se pueden asignar redes con tres tamaños fijos (clases A, B y C).
+
+Así mismo, la clasificación de IPs por clase requiere que los ruteadores almacenen tablas de enrutamiento muy grandes, ya que se debe almacenar direcciones IP individuales y direcciones IP de subredes, lo que necesita gran cantidad de espacio de almacenamiento y por tanto el incremento en el costo de éstos dispositivos.
+
+Como una alternativa a la clasificación de direcciones IP por clases, se desarrolló el concepto de Enrutamiento de dominios sin clases o CIDR (Classless Inter-Domain Routing).
+
+La notación CIDR es una notación que agrega un número llamado longitud del prefijo a la dirección IPv4, el cual indica el número de unos que forman la máscara de subred a la que pertenece la IP.
+
+Por ejemplo: 192.54.20.10/24 indica que la IP es 192.54.20.10 y la máscara de subred es 255.255.255.0, ya que 25510=111111112 es decir ocho unos binarios, por tanto, una longitud del prefijo igual a 24 indica que la máscara de subred contiene 24 unos (contados de izquierda a derecha).
+
+Otro ejemplo es el siguiente: 192.54.20.10/20, en este caso la máscara de subred correspondiente es: 255.255.240.0 ya que 25510=111111112 y 24010 = 111100002, es decir, 8+8+4= 20 unos.
+
+De esta manera, es posible saber si dos o más IPs en formato CIDR pertenecen a la misma subred, solo es necesario verificar que las IPs coinciden en los N primeros bits, donde N es la longitud del prefijo que sucede a la diagonal "/".
+
+La notación CIDR permite implementar redes con una variedad en el número de hosts, a esta propiedad se le llama máscara de subred de longitud variable (VLSM: Variable Length Subnet Mask).
+
+Por ejemplo, supongamos que tenemos dos computadoras con las siguientes IP:
+
+192.30.50.20/22 192.30.48.10/22
+
+¿Estas computadoras pertenecen a la misma subred?
+
+Primero convertimos cada IP a binario. Entonces verificamos que los primeros 22 dígitos (de izquierda a derecha) coincidan.
+
+192.030.050.020 = 11000000 00011110 00110010 00010100 192.030.048.010 = 11000000 00011110 00110000 00001010 255.255.252.000 = 11111111 11111111 11111100 00000000  (22 unos)
+
+En efecto, los primeros 22 dígitos binarios coinciden en ambas IPs, por tanto, las dos computadoras pertenecen a la misma subred.
+
+\section{Espacios de direcciones IP}
+
+La notación CIDR permite definir espacios de direcciones IP en una red.
+
+Un espacio de direcciones es un intervalo de direcciones IP definido en notación CIDR.
+
+Por ejemplo, 10.2.0.0/16 indica el intervalo de direcciones IP entre 10.2.0.0 y 10.2.255.255, un total de 65,536 direcciones IP.
+
+El número total de direcciones IP que contiene un espacio de direcciones se puede calcular utilizando la longitud del prefijo CIDR, en el caso anterior el número de direcciones se calcula de la siguiente manera: 2(32-16)=216=65536.
+
+Por otra parte la longitud del prefijo /32 define un espacio de direcciones IP con un número de direcciones IP igual a: 2(32-32)=20=1
+
+\section{Direcciones IP utilizables y no utilizables}
+
+La siguiente tabla muestra el número total de IPs para cada longitud del prefijo, el número de IPs utilizables, las IPs no utilizables y la máscara de subred.
+
+Las direcciones IPs no utilizables son la dirección IP de la subred (la primera dirección IP del intervalo de direcciones IP) y la dirección IP de broadcast (la última dirección IP del intervalo de direcciones IP); la dirección de broadcast se utiliza para enviar tráfico a todos los dispositivos dentro de la subred.
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{|X|X|X|X|X|}
+\hline
+Longitud del prefijo & Número total de IPs & IPs utilizables & IPs no utilizables & Máscara de subred \\ \hline
+/32 & 1 & 1 & Ninguna & 255.255.255.255 \\ \hline
+/31 & 2 & 0 & Todas (Solo para punto a punto) & 255.255.255.254 \\ \hline
+/30 & 4 & 2 & Red, Broadcast & 255.255.255.252 \\ \hline
+/29 & 8 & 6 & Red, Broadcast & 255.255.255.248 \\ \hline
+/28 & 16 & 14 & Red, Broadcast & 255.255.255.240 \\ \hline
+/27 & 32 & 30 & Red, Broadcast & 255.255.255.224 \\ \hline
+/26 & 64 & 62 & Red, Broadcast & 255.255.255.192 \\ \hline
+/25 & 128 & 126 & Red, Broadcast & 255.255.255.128 \\ \hline
+/24 & 256 & 254 & Red, Broadcast & 255.255.255.0 \\ \hline
+/23 & 512 & 510 & Red, Broadcast & 255.255.254.0 \\ \hline
+/22 & 1024 & 1022 & Red, Broadcast & 255.255.252.0 \\ \hline
+/21 & 2048 & 2046 & Red, Broadcast & 255.255.248.0 \\ \hline
+/20 & 4096 & 4094 & Red, Broadcast & 255.255.240.0 \\ \hline
+/19 & 8192 & 8190 & Red, Broadcast & 255.255.224.0 \\ \hline
+/18 & 16384 & 16382 & Red, Broadcast & 255.255.192.0 \\ \hline
+/17 & 32768 & 32766 & Red, Broadcast & 255.255.128.0 \\ \hline
+/16 & 65536 & 65534 & Red, Broadcast & 255.255.0.0 \\ \hline
+/15 & 131072 & 131070 & Red, Broadcast & 255.254.0.0 \\ \hline
+/14 & 262144 & 262142 & Red, Broadcast & 255.252.0.0 \\ \hline
+/13 & 524288 & 524286 & Red, Broadcast & 255.248.0.0 \\ \hline
+/12 & 1048576 & 1048574 & Red, Broadcast & 255.240.0.0 \\ \hline
+/11 & 2097152 & 2097150 & Red, Broadcast & 255.224.0.0 \\ \hline
+/10 & 4194304 & 4194302 & Red, Broadcast & 255.192.0.0 \\ \hline
+/9 & 8388608 & 8388606 & Red, Broadcast & 255.128.0.0 \\ \hline
+/8 & 16777216 & 16777214 & Red, Broadcast & 255.0.0.0 \\ \hline
+\end{tabularx}
+\end{center}
+
+Referencia: Classless Inter-domain Routing (CIDR): The Internet Address Assignment and Aggregation Plan
+
+\chapter{Redes virtuales en Azure}
+
+Cuando se crea una máquina virtual en Azure se crea por default:
+
+\begin{itemize}
+\item Una red virtual (VNet).
+\item Una subred.
+\item Una interfaz de red (NIC, Network Interface Card) incluyendo una IP privada.
+\item Un grupo de seguridad de red (NSG, Network Security Group).
+\item Una IP pública.
+\item Un disco de sistema operativo.
+\end{itemize}
+
+\section{Grupo de recursos}
+
+Un grupo de recursos es similar a un directorio de sistema operativo.
+
+Un grupo de recursos puede contener diferentes recursos de Azure.
+
+Cuando se elimina un grupo de recursos también se eliminan los recursos que contiene el grupo de recursos.
+
+\section{Red virtual (VNet)}
+
+Una red virtual es una red privada en Azure.
+
+Las computadoras conectadas a una red virtual pueden comunicarse en forma segura utilizando sus direcciones IP privadas debido a que las direcciones IP privadas no son visibles desde Internet.
+
+Una red virtual está compuesta por uno o más espacios de direcciones IPv4.
+
+Un espacio de direcciones es un intervalo de direcciones IP definido en notación CIDR.
+
+Los intervalos de direcciones IP en una red virtual no se superponen, es decir, los intervalos no tienen direcciones IP en común.
+
+Por ejemplo, 10.2.0.0/16 indica el intervalo 10.2.0.0 a 10.2.255.255, un total de 65,536 direcciones.
+
+El tamaño máximo del espacio de direcciones de una red virtual es /8 (en notación CIDR, 224=16,777,216 direcciones IP).
+
+Ver: Agregar o quitar un rango de direcciones.
+
+\section{Subred}
+
+Una red virtual puede tener una o varias subredes.
+
+Cada subred se define como un intervalo de direcciones IP dentro de la red virtual.
+
+Cuando se crea una red virtual, se crea por default una subred llamada “default”. Esta subred puede modificarse o eliminarse.
+
+El tamaño mínimo de una subred es /29 (23=8 direcciones IP) y el máximo /8 (224=16,777,216 direcciones IP).
+
+Dos computadoras conectadas a diferentes subredes dentro de una misma red virtual se pueden comunicar.
+
+\section{Grupo de seguridad de red}
+
+Un grupo de seguridad de red (NSG, Network Security Group) es un conjunto de reglas de entrada y reglas de salida para los puertos.
+
+Las reglas de puerto de entrada controlan las conexiones TCP y paquetes UDP que vienen del exterior de la máquina virtual, mientras que las reglas de puerto de salida controlan las conexiones TCP y paquetes UDO que salen de la máquina virtual.
+
+Notar que una vez que se establece la conexión TCP, la comunicación es bidireccional, es decir, la computadora que se conecta (cliente) puede enviar y recibir datos de la computadora a la que se conecta (servidor),
+
+Cada regla de entrada permite/deniega conexiones TCP o paquetes UDP desde:
+
+\begin{itemize}
+\item Una dirección IP de origen específica.
+\item Un intervalo de direcciones IP de origen.
+\item Cualquier dirección IP de origen.
+\item Un intervalo de puertos de entrada.
+\item Un puerto de entrada específico.
+\item Cualquier puerto de entrada.
+\end{itemize}
+
+Cada regla de salida permite/deniega conexiones TCP o paquetes UDP hacia:
+
+\begin{itemize}
+\item Una dirección IP de destino específica.
+\item Un intervalo de direcciones IP de destino.
+\item Cualquier dirección IP de destino.
+\item Un intervalo de puertos de destino,.
+\item Un puerto de destino específico.
+\item Cualquier puerto de destino.
+\end{itemize}
+
+También se puede configurar si se permite o deniega un protocolo específico (TCP, UDP, ICMP o cualquiera de los anteriores) o si se permite o deniega cualquier protocolo.
+
+A cada regla del grupo de seguridad de red se le asigna una prioridad, de tal manera que las reglas se aplican de menor a mayor prioridad, es decir, las reglas con menor prioridad tienen mayor precedencia.
+
+Por ejemplo, si una regla con menor prioridad permite el tráfico y otra regla con mayor prioridad deniega el mismo tráfico, entonces se aplicará la primera regla y se ignorará la segunda.
+
+Un grupo de seguridad de red puede asociarse a nivel subred y a nivel interfaz de red.
+
+Un mismo grupo de seguridad de red puede asociarse a varias subredes y varias interfaces de red.
+
+Por default todo el tráfico que viene de un balanceador de carga o de la red virtual es permitido, y todo el tráfico que viene de Internet es denegado, por tanto para cambiar esto es necesario crear las reglas necesarias para controlar el tráfico de entrada y de salida.
+
+En la siguiente figura podemos ver cómo dos computadoras en la misma red virtual pueden comunicarse sin restricciones.
+
+Por otra parte, para conectar las computadoras a Internet es conveniente configurar las reglas de entrada y de salida.
+
+Debido a que las direcciones IP en una red virtual son privadas, para comunicar dos computadoras conectadas a diferentes redes virtuales se deberá utilizar las direcciones IP públicas de las computadoras:
+
+\clearpage
+
+% Fuente: Replicacion.md
+
+\chapter{Replicación de un sistema completo en la nube}
+
+En la actualidad el cómputo en la nube nos permite realizar el aprovisionamiento dinámico de recursos de forma fácil y rápida. Entonces ¿por qué no replicar el sistema completo?
+
+\section{Arquitectura de un sistema replicado}
+
+La siguiente figura muestra la arquitectura general de un sistema replicado:
+
+En este caso se supone que el sistema consta de dos o más servidores de aplicaciones conectados a un servidor de bases de datos, el cual puede implementar la replicación de datos mediante discos espejo.
+
+El administrador de tráfico funciona como un proxy inverso, el cual recibe las conexiones y peticiones de los clientes y las reenvía al sistema principal con copia a la réplica.
+
+El sistema principal procesa las peticiones del cliente, y envía las respuestas al administrador de tráfico, el cual las reenvía al cliente. Notar que el administrador de tráfico deberá ignorar las respuestas de la réplica.
+
+Para garantizar la recuperación en caso de desastre catastrófico en el site donde ejecuta el sistema principal, la réplica deberá ejecutar en una locación diferente, por lo tanto, el administrador de tráfico y la réplica deberán tener cada uno una IP pública.
+
+Mientras el sistema principal puede estar ejecutando en la nube o en una instalación propia de la empresa (on-premise), la réplica estaría funcionando en la nube, en alguna locación geográfica diferente a la locación donde ejecuta el sistema principal.
+
+El administrador de tráfico puede ser un programa o un appliance localizado en mismo site donde ejecuta el sistema principal, de manera que el administrador de tráfico se pueda conectar al sistema principal mediante una red privada.
+
+Como puede observarse, tanto el sistema principal como la réplica realizarán las mismas transacciones sobre la base de datos (y/o el sistema de archivos), por lo que la consistencia de los datos está garantizada.
+
+Si se produce un error en la comunicación entre el administrador de tráfico y la réplica, el cliente deberá recibir un de error de comunicación.
+
+En caso de falla del sistema principal y/o falla del administrador de tráfico, solo habrá que redefinir el dominio del sistema a la IP pública de la réplica, entonces los clientes estarán conectados directamente al sistema de respaldo.
+
+Desde luego, posteriormente será necesario: 1) sacar de producción la réplica, 2) realizar una copia espejo de la réplica, y 3) restaurar el sistema principal y el administrador de tráfico.
+
+\section{Replicación de una arquitectura de tres capas en la nube}
+
+Como caso de estudio, veremos la replicación de la arquitectura de tres capas en la nube que implementamos en la tarea 1, consistente en una aplicación web (front-end), servicios web para Tomcat (back-end) y MySQL.
+
+Como se explicó anteriormente, para replicar un sistema, podemos crear una máquina virtual en la nube (réplica) que procese todas las peticiones que realizan los clientes, simultáneamente al proceso de las mismas peticiones que realiza el sistema principal.
+
+La arquitectura del sistema replicado que estudiaremos es la siguiente:
+
+En el NSG (Network Security Group) del sistema principal se abrirá el puerto de entrada 80, y en el NSG de la réplica se abrirá el puerto de entrada 8080.
+
+AdministradorTrafico.java
+
+Vamos a utilizar el programa Proxy.java el cual es un proxy transparente escrito en Java, modificado para que funcione como un administrador de tráfico.
+
+La arquitectura del programa Proxy.java se muestra a continuación:
+
+Como podemos ver, el programa Proxy.java consta de un servidor y un cliente.
+
+El servidor del proxy recibe la conexión del cliente del usuario, entonces el cliente del proxy realiza una conexión al servidor del usuario.
+
+Cada petición que envía el cliente del usuario es recibida por el servidor del proxy, entonces es reenviada por el cliente del proxy al servidor del usuario.
+
+La respuesta del servidor del usuario es recibida por el cliente del proxy, el cual la reenvía al servidor del proxy, y este a su vez, la reenvía al cliente del usuario.
+
+Para implementar el administrador de tráfico, se agregó al programa Proxy.java, un cliente al programa el cual se conectará a una réplica del servidor del usuario, de manera que ahora las peticiones que recibe el servidor del proxy serán reenviadas al servidor principal y al servidor réplica.
+
+Podemos ver que sólo la respuesta del servidor principal será enviada al usuario.
+
+Para probar la replicación de una arquitectura de tres capas basada en Tomcat, haremos lo siguiente:
+
+\begin{enumerate}
+\item Crear dos máquinas virtuales utilizando la imagen que se creó en la tarea
+\end{enumerate}
+
+\begin{enumerate}
+\item Abrir el puerto de entrada 80 protocolo TCP en el NSG (Network Security Group) de la máquina virtual 1 (sistema principal).
+\end{enumerate}
+
+\begin{enumerate}
+\item Abrir el puerto de entrada 8080 protocolo TCP en el NSG (Network Security Group) de la máquina virtual 2 (réplica), ingresar en el campo "Origen" ("Source" si la pantalla está en inglés) la IP de la máquina virtual 1 (por seguridad, la máquina virtual 1 será la única computadora que podrá acceder la máquina virtual 2).
+\item Conectar a la máquina virtual 1 utilizando el programa ssh.
+\end{enumerate}
+
+\begin{enumerate}
+\item Utilizando el programa sftp enviar a la máquina virtual 1 el archivo: AdministradorTrafico.java
+\end{enumerate}
+
+\begin{enumerate}
+\item Compilar en la máquina virtual 1 el programa AdministradorTrafico.java.
+\end{enumerate}
+
+\begin{enumerate}
+\item Iniciar Tomcat en las máquinas virtuales 1 y 2.
+\end{enumerate}
+
+\begin{enumerate}
+\item Ejecutar en la máquina virtual 1 el administrador de tráfico:
+\end{enumerate}
+
+\begin{SourceCode}
+sudo java AdministradorTrafico localhost 8080 ip-máquina-virtual-2 8080 80 &
+\end{SourceCode}
+
+Donde:
+
+\begin{itemize}
+\item localhost es la IP de la máquina virtual principal, donde ejecuta el administrador de tráfico.
+\item 8080 es el puerto que abre Tomcat en la máquina virtual principal.
+\item IP-máquina-virtual-2 es la IP de la réplica,
+\item 8080 es el puerto abierto por Tomcat en la réplica,
+\item 80 es el puerto abierto por el programa AdministradorTrafico.java en el sistema principal
+\end{itemize}
+
+Notar que no es necesario abrir el puerto 8080 en la primera máquina virtual, ya que el programa AdministradorTrafico.java y Tomcat se comunican localmente mediante loopback.
+
+En este caso ejecutamos el administrador de tráfico con "sudo" para que éste pueda abrir el puerto 80 en la máquina virtual 1.
+
+\begin{enumerate}
+\item En la computadora local (Windows, Linux o MacOS):
+\end{enumerate}
+
+9.1 En un navegador se deberá ingresar la URL para iniciar la aplicación web, notar que no es necesario ingresar el número de puerto, ya que se utiliza el puerto default 80:
+
+\url{http://ip-máquina-virtual-1/prueba.html}
+
+9.2 Ahora se deberá ejecutar diversas funciones en la aplicación web de manera que se realicen las transacciones correspondientes en la base de datos.
+
+9.3 Podemos verificar que las bases de datos en la máquina virtual y la máquina virtual réplica son idénticas.
+
+\section{Administrador de tráfico SSL}
+
+En el caso anterior utilizamos el programa AdministradorTrafico.java como un administrador de tráfico para HTTP, lo cual no es de utilidad en la práctica debido a que actualmente se utiliza el protocolo HTTPS en lugar del protocolo HTTP por razones de seguridad.
+
+En realidad, el programa AdministradorTrafico.java permite derivar cualquier tráfico TCP no SSL, por ejemplo: HTTP, FTP, Telnet, SMTP, etc.
+
+Para que el programa AdministradorTraficor.java pueda administrar tráfico HTTPS, solo es necesario implementar la conexión con sockets seguros en el servidor del proxy; el programa modificado se llama AdministradorTraficoSSL.java
+
+La arquitectura del sistema replicado es la siguiente:
+
+Ahora, se abrirá el puerto de entrada 443 en el NSG (Network Security Group) del sistema principal, y se abrirá el puerto de entrada 22 en el NSG de la réplica. El programa AdministradorTraficoSSL.java requiere un keystore que contenga el certificado del servidor, este certificado puede ser un certificado auto-firmado o un certificado emitido por una CA. Por tanto, es necesario definir el nombre del keystore y la contraseña en el programa AdministradorTraficoSSL.java.
+
+Notar que en esta arquitectura no es necesario instalar un certificado digital en Tomcat, ya que Tomcat seguirá utilizando el protocolo HTTP.
+
+Debido a que el administrador de tráfico (AdministradorTraficoSSL.java) se comunica en forma insegura con el Tomcat que ejecuta en la réplica, será necesario crear un túnel SSH entre el administrador de tráfico y Tomcat.
+
+Para ejecutar el administrador de tráfico HTTPS:
+
+\begin{SourceCode}
+sudo java AdministradorTraficoSSL localhost 8080 localhost 8081 443 &
+\end{SourceCode}
+
+Notar que la IP de la máquina virtual 2 se substituye por "localhost", debido a que el segundo cliente del administrador de tráfico se conecta al cliente de SSH, el cual ejecuta en la computadora principal.
+
+También es necesario que el cliente SSH abra un puerto diferente (p.e. 8081) al puerto que abre Tomcat (8080), debido a que el cliente SSH y Tomcat ejecutan en la misma computadora.
+
+Entonces para ejecutar la aplicación web, ingresamos en el navegador la URL de la aplicación web:
+
+\url{https://ip-máquina-virtual-1/prueba.html}
+
+Si el certificado del servidor es un certificado auto-firmado, entonces el navegador mostrará una advertencia que indica que el certificado es inseguro. En este caso podemos continuar debido a que sabemos que el certificado es seguro porque lo hemos creado nosotros.
+
+\clearpage
+
+% Fuente: TablasAgregadas.md
+
+\chapter{Tablas agregadas}
+
+Ahora veremos cómo utilizar tablas agregadas para ejecutar eficientemente consultas multidimensionales, así mismo, veremos cómo podemos generar las tablas agregadas para un sistema de BI, utilizando técnicas de MapReduce. Consideremos la base de datos "ejemplo\_olap" (modelo estrella) que creamos anteriormente.
+
+Ejecutando la siguiente instrucción SELECT, podemos obtener un cubo OLAP que incluya las ventas acumuladas con respecto a las dimensiones country, category y product:
+
+\begin{SourceCode}
+SELECT c.country, cat.category, p.product, SUM(f.sales) AS total_sales
+FROM fact_table f
+JOIN country c ON f.id_country = c.id_country
+JOIN product p ON f.id_product = p.id_product
+JOIN category cat ON f.id_category = cat.id_category
+GROUP BY c.country, cat.category, p.product
+ORDER BY c.country, cat.category, p.product;
+\end{SourceCode}
+
+Sin embargo, si la fact table es muy grande, la ejecución de la instrucción SELECT puede tardar mucho tiempo.
+
+Para que las consultas multidimensionales ejecuten más rápido, se utilizan tablas agregadas.
+
+Supongamos que creamos una tabla llamada "country\_category\_product", incluyendo los siguientes campos: id\_country, id\_category, id\_product, sales. Esta tabla va a conteneer las ventas acumuladas por país, categoría y producto.
+
+Entonces se dice que esta tabla es una tabla agregada, debido a que contiene una métrica acumulada.
+
+Para cargar la tabla agregada "country\_category\_product" ejecutamos la siguiente instrucción:
+
+\begin{SourceCode}
+INSERT INTO country_category_product (id_country, id_category, id_product, sales)
+SELECT c.id_country, p.id_category, f.id_product, SUM(f.sales) as total_sales
+FROM fact_table f
+INNER JOIN country c ON f.id_country = c.id_country
+INNER JOIN product p ON f.id_product = p.id_product
+GROUP BY c.id_country, p.id_category, f.id_product;
+\end{SourceCode}
+
+Entonces podemos utilizar la tabla agregada "country\_category\_product" (en lugar de la fact\_table) para obtener el cubo OLAP con las ventas acumuladas con respecto a las dimensiones country, category y product:
+
+\begin{SourceCode}
+SELECT c.country, cat.category, p.product, SUM(ccp.sales) AS total_sales
+FROM country_category_product ccp
+JOIN country c ON ccp.id_country = c.id_country
+JOIN category cat ON ccp.id_category = cat.id_category
+JOIN product p ON ccp.id_product = p.id_product
+GROUP BY c.country, cat.category, p.product
+ORDER BY c.country, cat.category, p.product;
+\end{SourceCode}
+
+Podemos ver que el cubo OLAP se genera más rápido, si utilizamos la tabla agregada en lugar de la fact table, ya que la tabla agregada tiene menos registros que la fact table.
+
+De la misma forma, si queremos obtener un cubo OLAP con las dimensiones country y category, acumulando sales, también podemos utilizar la tabla agregada "country\_category\_product":
+
+\begin{SourceCode}
+SELECT c.country, cat.category, SUM(ccp.sales) AS total_sales
+FROM country_category_product ccp
+JOIN country c ON ccp.id_country = c.id_country
+JOIN category cat ON ccp.id_category = cat.id_category
+GROUP BY c.country, cat.category
+ORDER BY c.country, cat.category;
+\end{SourceCode}
+
+También es posible utilizar la tabla agregada "country\_category\_product", para obtener un cubo OLAP que incluya solo la dimensión country, acumulando sales:
+
+\begin{SourceCode}
+SELECT c.country, SUM(ccp.sales) AS total_sales
+FROM country_category_product ccp
+JOIN country c ON ccp.id_country = c.id_country
+GROUP BY c.country, cat.category
+ORDER BY c.country, cat.category;
+\end{SourceCode}
+
+Y para obtener un cubo con cero dimensiones, también podemos utilizar la tabla agregada "country\_category\_product":
+
+\begin{SourceCode}
+SELECT SUM(ccp.sales) AS total_sales
+FROM country_category_product ccp;
+\end{SourceCode}
+
+Entonces, para que las consultas OLAP ejecuten rápidamente, los analistas de BI deben saber previamente qué tipo de cubos van a generar los usuarios, de manera que puedan crear y cargar las tablas agregadas necesarias.
+
+El proceso de carga de la fact table, actualización de las tablas de dimensiones, y carga de las tablas agregadas, generalmente se realiza por la noche, de manera que los usuarios del sistema de BI puedan al otro día generar los cubos OLAP que requieran.
+
+Si las fact tables son muy grandes, el proceso de carga de las tablas agregadas puede tardar demasiado.
+
+Para acelerar la carga de las tablas agregadas, los analistas de BI pueden distribuir el proceso en varias computadoras, sin embargo, esto implicaría instalar el DMBS en diferentes computadoras, lo cual requiere más licencias para el DBMS lo cual incrementa considerablemente los costos.
+
+Ahora veremos cómo podemos generar las tablas agregadas para un sistema de BI, utilizando técnicas de MapReduce.
+
+\section{MapReduce}
+
+MapReduce es un modelo de programación utilizado para procesar grandes cantidades de datos en el área de Big Data.
+
+Este modelo de programación fue introducido originalmente por Google para indexar la WWW, no obstante, la implementación más popular de MapReduce es actualmente Apache Hadoop.
+
+MapReduce consta de dos operaciones, la operación "Map" (mapear) y la operación "Reduce" (reducir).
+
+\begin{itemize}
+\item Map. En la fase de Map, se lee un conjunto de datos y se genera una salida consistente en parejas "clave-valor" (parejas "key-value").
+\item Reduce. En la fase Reduce, se lee las parejas de clave-valor creadas en la fase Map, entonces se genera un conjunto más pequeño de parejas clave-valor. La "reducción" puede implicar sumar los valores para una misma clave, obtener el mayor o menor valor para una misma clave, obtener el promedio de los valores para una misma llave, etc.
+\end{itemize}
+
+Por ejemplo, supongamos que tenemos un archivo CSV con los siguientes datos de entrada:
+
+1,2,1,200.0 2,3,1,100.0 1,2,1,50.0 2,3,1,200.0 1,2,3,100.0
+
+Supongamos que el proceso Map obtiene la clave concatenando los tres primeros números separándolos con una coma.
+
+Entonces las parejas clave-valor que produce el proceso Map son las siguientes:
+
+"1,2,1"  200.0 "1,2,1"  50.0 "2,3,1"  100.0 "2,3,1"  200.0 "1,2,3"  100.0
+
+Ahora bien, la salida del proceso Map no entra directamente al proceso Reduce, primero es necesario crear una colección con los valores asociados a cada clave:
+
+"1,2,1"  200.0 50.0 "2,3,1"  100.0 200.0 "1,2,3"  100.0
+
+El proceso Reduce recibe una colección de valores para cada clave. En este caso, el proceso Reduce va a acumular los valores para cada clave, entoncesd el proceso Reduce finalmente produce las siguientes parejas clave-valor:
+
+"1,2,1"  250.0 "2,3,1"  300.0 "1,2,3"  100.0
+
+\subsection{Job MapReduce}
+
+Un job MapReduce es la ejecución de un programa que realiza los procesos Map y Reduce sobre una arquitectura master-slave.
+
+Los datos de entrada se colocan inicialmente en un sistema de archivos distribuido llamado HDFS (Hadoop Distributed File System).
+
+En un job MapReduce se realizan las siguientes tareas:
+
+\begin{enumerate}
+\item Split (dividir). El HDFS distribuye los datos de entrada en los nodos slave que forman un cluster.
+\item Map (mapear). Cada nodo slave ejecuta el proceso Map, el resultado intermedio consistente en parejas clave-valor.
+\item Shuffling (repartir). Los resultados intermedios son enviados a diferentes nodos slave, de acuerdo a la clave, de manera que los valores asociados a una misma clave sean puestos en el mismo nodo.
+\item Merge (unir). Los resultados intermedios son agrupados por la clave.
+\item Reduce (reducir). Cada nodo slave ejecuta el procedo Reduce, el resultado se escribe en el HDFS.
+\end{enumerate}
+
+\section{Cómo programar un proceso MapReduce en Java}
+
+Ahora veremos cómo programar en Java un proceso MapReduce utilizando Apache Hadoop.
+
+Hadoop es una herramienta utilizada en al área de Big Data para almacenar y procesar grandes volúmenes de datos. Los datos se distribuyen en clusters de nodos utilizando el sistema de archivos HDFS (Hadoop Distributed File System).
+
+Supongamos que tenemos datos de entrada en un archivo CSV.
+
+Cada registro en el archivo contiene tres números enteros y un valor punto flotante.
+
+Entonces queremos acumular los valores punto flotante utilizando como clave la combinación de los tres números enteros.
+
+Primeramente, necesitamos crear una clase "Mapper":
+
+\begin{SourceCode}
+// Generado por ChatGPT, 2024
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.Mapper;
+import java.io.IOException;
+public class AggregationMapper extends Mapper<LongWritable, Text, Text, DoubleWritable> {
+private Text dimensionKey = new Text();
+private DoubleWritable metricValue = new DoubleWritable();
+@Override
+public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+String[] parts = value.toString().split(",");
+if (parts.length == 4) {
+    String d1 = parts[0].trim();
+    String d2 = parts[1].trim();
+    String d3 = parts[2].trim();
+    double m1 = Double.parseDouble(parts[3].trim());
+    dimensionKey.set(d1 + "," + d2 + "," + d3);
+    metricValue.set(m1);
+    context.write(dimensionKey, metricValue);
+}
+}
+}
+\end{SourceCode}
+
+El método "map" es invocado por cada registro (row) en el archivo de datos de entrada.
+
+El método "map" recibe como parámetros:
+
+\begin{itemize}
+\item key. La posición del registro (línea de texto) en el archivo de entrada. El primer registro es 0, el segundo registro es 1, y así sucesivamente.
+\item value. El contenido del registro de entrada (línea de texto), de tipo Text.
+\item context. El contexto donde se escribirá la salida (parejas clave-valor).
+\end{itemize}
+
+En este caso, el método "map" divide el registro de entrada utilizando la coma como separador.
+
+Entonces obtiene la clave, de tipo Text, formada por los tres primeros números concatenados mediante una coma.
+
+Finalmente escribe a la salida la clave y el valor de tipo DoubleWritable.
+
+Ahora necesitamos crear una clase "Reducer":
+
+\begin{SourceCode}
+// Generado por ChatGPT, 2024
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.Reducer;
+import java.io.IOException;
+public class AggregationReducer extends Reducer<Text, DoubleWritable, Text, DoubleWritable>{
+  private DoubleWritable result = new DoubleWritable();
+  @Override
+  public void reduce(Text key, Iterable<DoubleWritable> values, Context context) throws IOException, InterruptedException {
+double sum = 0.0;
+for (DoubleWritable val : values) {
+  sum += val.get();
+}
+result.set(sum);
+context.write(key, result);
+  }
+}
+\end{SourceCode}
+
+El método "reduce" es invocado para cada clave diferente.
+
+El método "reduce" recibe como parámetros:
+
+\begin{itemize}
+\item key. La clave creada por el proceso Map, de tipo Text.
+\item values. Una colección de valores asociados con la clave, en este caso los valores son de tipo DoubleWritable.
+\item context. El contexto donde se escribirá la salida (parejas clave-valor).
+\end{itemize}
+
+En este caso, el método "reduce" acumula los valores asociados con la clave, entonces escribe a la salida la clave y la suma de los valores.
+
+El programa principal que ejecuta el proceso MapReduce es el siguiente:
+
+\begin{SourceCode}
+// Generado por ChatGPT, 2024.
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+public class AggregationDriver {
+public static void main(String[] args) throws Exception {
+if (args.length != 2) {
+    System.err.println("Usage: AggregationDriver <input path> <output path>");
+    System.exit(-1);
+}
+Configuration conf = new Configuration();
+Job job = Job.getInstance(conf, "Data Aggregation");
+job.setJarByClass(AggregationDriver.class);
+job.setMapperClass(AggregationMapper.class);
+job.setReducerClass(AggregationReducer.class);
+job.setOutputKeyClass(Text.class);
+job.setOutputValueClass(DoubleWritable.class);
+FileInputFormat.addInputPath(job, new Path(args[0]));
+FileOutputFormat.setOutputPath(job, new Path(args[1]));
+System.exit(job.waitForCompletion(true) ? 0 : 1);
+}
+}
+\end{SourceCode}
+
+El programa principal realiza lo siguiente:
+
+\begin{itemize}
+\item Crea un job MapReduce, en este caso el nombre del job es "Data Aggregation".
+\item Define la clase correspondiente al programa principal AggregationDriver.class).
+\item Define la clase Mapper (AggregationMapper.class).
+\item Define la clase Reducer (AggregationReducer.class).
+\item Define el tipo de datos de la clave de salida (Text.class).
+\item Define el tipo de dato del valor de salida (DoubleWriteble.class).
+\item Define el nombre del directorio donde se encuentran los archivos con los datos de entrada (InputPath).
+\item Define el nombre del directorio donde se colocarán los archivos de salida (OutputPath).
+\item Espera que termine el job MapReduce.
+\end{itemize}
+
+\section{Azure HDInsight}
+
+Azure HDInsight es un servicio para análisis de datos empresariales, open-source y completamente administrado.
+
+Está diseñado para manejar grandes volúmenes de datos rápida y eficientemente.
+
+En HDInsight se puede utilizar diferentes fraeworks open-source como Apache Hadoop, entre otros.
+
+HDInsight permite reducir costos, así mismo, es un servicio elástico ya que permite escalar en forma automática la carga de trabajo hacia arriba o hacia abajo.
+
+Algunos ejemplos de uso de HDInsight:
+
+\begin{itemize}
+\item Procesamiento ETL (Extract-Transform-Load), el cual se utiliza para extraer datos (estructurados o no estructurados) de fuentes heterogeneas, realizar alguna transformación a los datos y cargar los datos en un almacén de datos. Los datos no estructurados pueden provenir de las redes sociales, Internet, o en general, de archivos con información que se desee procesar.
+\item Procesamiento de datos para Data warehouse, donde es necesario crear tablas agregadas para optimizar las consultas que se realizan sobre los modelos multidimensionales. En este caso, se utiliza un cluster Hadopp.
+\item Internet de las cosas (IoT), donde es necesario procesar en tiempo real flujos de datos (stream processing) de diferentes dispositivos conectados a Internet, entonces almacenar los datos procesados, enviarlos a aplicaciones en tiempo real, o enviarlos a paneles de control (dashboards) en tiempo real. En este caso, se utiliza un cluster Kafka. Apache Kafka es una plataforma distribuida de streaming de eventos en base a una arquitectura publisher-suscriber.
+\end{itemize}
+
+En HDInsight se puede programar en Java, Python, .NET y Go.
+
+\clearpage

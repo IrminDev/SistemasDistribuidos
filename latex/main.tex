@@ -1,0 +1,57 @@
+% !TeX program = xelatex
+\documentclass[11pt,a4paper,oneside]{book}
+\usepackage{fontspec}
+% Cargar archivos de TeX Live sin depender del registro de fontconfig.
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont=lmroman10-bold.otf,
+  ItalicFont=lmroman10-italic.otf,
+  BoldItalicFont=lmroman10-bolditalic.otf,
+  SmallCapsFont=lmromancaps10-regular.otf]
+\setsansfont{lmsans10-regular.otf}[
+  BoldFont=lmsans10-bold.otf,
+  ItalicFont=lmsans10-oblique.otf,
+  BoldItalicFont=lmsans10-boldoblique.otf]
+\setmonofont{Noto Sans Mono CJK SC}[Scale=0.85,
+  BoldFont={Noto Sans Mono CJK SC},BoldFeatures={FakeBold=2}]
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage[margin=2.5cm,headheight=15pt]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{fvextra}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{array,tabularx}
+\definecolor{accent}{HTML}{245577}
+\definecolor{codebackground}{HTML}{F4F6F8}
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent,
+  pdftitle={Sistemas distribuidos: unidades 1 a 4}}
+\renewcommand{\arraystretch}{1.15}
+\DefineVerbatimEnvironment{SourceCode}{Verbatim}{
+  breaklines=true,breakanywhere=true,fontsize=\small,
+  frame=single,rulecolor=\color{accent},framesep=3mm,
+  fillcolor=codebackground,tabsize=4}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{3em}
+\setlist{topsep=0.3em,itemsep=0.2em,parsep=0.2em}
+\setcounter{tocdepth}{2}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Sistemas distribuidos}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\begin{document}
+\frontmatter
+\title{\textbf{Sistemas distribuidos}\\[0.6em]\large Material de las unidades 1 a 4}
+\author{}
+\date{}
+\maketitle
+\tableofcontents
+\mainmatter
+\input{unidad1/contenido}
+\input{unidad2/contenido}
+\input{unidad3/contenido}
+\input{unidad4/contenido}
+\end{document}
